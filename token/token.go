@@ -7,8 +7,16 @@ type Token struct {
 	Literal string
 }
 
-func NewToken(tokenType TokenType, ch byte) *Token {
-	return &Token{Type: tokenType, Literal: string(ch)}
+func NewToken(tokenType TokenType, literal string) *Token {
+	return &Token{Type: tokenType, Literal: literal}
+}
+
+func NewTokenByChar(tokenType TokenType, ch byte) *Token {
+	return NewToken(tokenType, string(ch))
+}
+
+func NewIdentifierToken(literal string) *Token {
+	return &Token{Type: lookupIdentifier(literal), Literal: literal}
 }
 
 func NewEOF() *Token {
@@ -40,3 +48,15 @@ const (
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
 )
+
+var keywords = map[string]TokenType{
+	"fn":  FUNCTION,
+	"let": LET,
+}
+
+func lookupIdentifier(identifier string) TokenType {
+	if tok, ok := keywords[identifier]; ok {
+		return tok
+	}
+	return IDENT
+}

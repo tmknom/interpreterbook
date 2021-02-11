@@ -1,8 +1,6 @@
 package lexer
 
 import (
-	"errors"
-	"fmt"
 	"monkey/token"
 )
 
@@ -19,35 +17,53 @@ func NewLexer(input string) *Lexer {
 	return l
 }
 
-func (l *Lexer) NextToken() (*token.Token, error) {
+func (l *Lexer) NextToken() *token.Token {
 	var tok *token.Token
 
 	switch l.ch {
 	case '=':
-		tok = token.NewToken(token.ASSIGN, l.ch)
+		tok = token.NewTokenByChar(token.ASSIGN, l.ch)
 	case '+':
-		tok = token.NewToken(token.PLUS, l.ch)
+		tok = token.NewTokenByChar(token.PLUS, l.ch)
 	case '(':
-		tok = token.NewToken(token.LPAREN, l.ch)
+		tok = token.NewTokenByChar(token.LPAREN, l.ch)
 	case ')':
-		tok = token.NewToken(token.RPAREN, l.ch)
+		tok = token.NewTokenByChar(token.RPAREN, l.ch)
 	case '{':
-		tok = token.NewToken(token.LBRACE, l.ch)
+		tok = token.NewTokenByChar(token.LBRACE, l.ch)
 	case '}':
-		tok = token.NewToken(token.RBRACE, l.ch)
+		tok = token.NewTokenByChar(token.RBRACE, l.ch)
 	case ',':
-		tok = token.NewToken(token.COMMA, l.ch)
+		tok = token.NewTokenByChar(token.COMMA, l.ch)
 	case ';':
-		tok = token.NewToken(token.SEMICOLON, l.ch)
+		tok = token.NewTokenByChar(token.SEMICOLON, l.ch)
 	case 0:
 		tok = token.NewEOF()
 	default:
-		message := fmt.Sprintf("error NextToken: undefined token: '%s'\n", string(l.ch))
-		return nil, errors.New(message)
+		if l.isLetter() {
+			// 識別子はreadIdentifierメソッド内で読み終わっているので、それ以上読む必要はない
+			return l.readIdentifier()
+		}
+		tok = token.NewTokenByChar(token.ILLEGAL, l.ch)
 	}
 
 	l.readChar()
-	return tok, nil
+	return tok
+}
+
+// 識別子を読み進める
+func (l *Lexer) readIdentifier() *token.Token {
+	beginPosition := l.position
+	for l.isLetter() {
+		l.readChar()
+	}
+	literal := l.input[beginPosition:l.position]
+	return token.NewIdentifierToken(literal)
+}
+
+// 使用可能な文字かチェックする
+func (l *Lexer) isLetter() bool {
+	return 'a' <= l.ch && l.ch <= 'z' || 'A' <= l.ch && l.ch <= 'Z' || l.ch == '_'
 }
 
 // 次の一文字を読んで、位置ポインタを更新する

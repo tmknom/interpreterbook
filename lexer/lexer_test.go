@@ -7,7 +7,7 @@ import (
 )
 
 func TestLexerNextToken(t *testing.T) {
-	input := "=+(){},;"
+	input := `=+(){},;let`
 
 	tests := []struct {
 		expectedType    token.TokenType
@@ -21,16 +21,21 @@ func TestLexerNextToken(t *testing.T) {
 		{token.RBRACE, "}"},
 		{token.COMMA, ","},
 		{token.SEMICOLON, ";"},
+		{token.LET, "let"},
 		{token.EOF, ""},
 	}
 
 	l := lexer.NewLexer(input)
 
 	for i, tt := range tests {
-		tok, err := l.NextToken()
+		tok := l.NextToken()
 
-		if err != nil {
-			t.Fatalf("tests[%d] - error: %+v", i, err)
+		//if err != nil {
+		//	t.Fatalf("tests[%d] - error: %+v", i, err)
+		//}
+
+		if tok.Type == token.ILLEGAL {
+			t.Fatalf("tests[%d] - illegal token: '%s'", i, tok.Literal)
 		}
 
 		if tok.Type != tt.expectedType {
