@@ -46,6 +46,9 @@ func (l *Lexer) NextToken() *token.Token {
 		if l.isLetter() {
 			// 識別子はreadIdentifierメソッド内で読み終わっているので、それ以上読む必要はない
 			return l.readIdentifier()
+		} else if l.isDigit() {
+			// 数字はreadNumberメソッド内で読み終わっているので、それ以上読む必要はない
+			return l.readNumber()
 		}
 		tok = token.NewTokenByChar(token.ILLEGAL, l.ch)
 	}
@@ -69,6 +72,21 @@ func (l *Lexer) isLetter() bool {
 	return 'a' <= l.ch && l.ch <= 'z' || 'A' <= l.ch && l.ch <= 'Z' || l.ch == '_'
 }
 
+// 数字を読み進める
+func (l *Lexer) readNumber() *token.Token {
+	beginPosition := l.position
+	for l.isDigit() {
+		l.readChar()
+	}
+	literal := l.input[beginPosition:l.position]
+	return token.NewIntegerToken(literal)
+}
+
+// 数字かチェックする
+func (l *Lexer) isDigit() bool {
+	return '0' <= l.ch && l.ch <= '9'
+}
+
 // 次の一文字を読んで、位置ポインタを更新する
 // positionは常にreadPositionの次を指し示す
 // 終端までいったらASCIIコードのNUL文字をセットする
@@ -84,16 +102,7 @@ func (l *Lexer) readChar() {
 
 // 空白改行を無視する
 func (l *Lexer) skipWhitespace() {
-	whitespaceCharacters := []byte{
-		' ',
-		'\t',
-		'\r',
-		'\n',
-	}
-
-	for _, ch := range whitespaceCharacters {
-		if l.ch == ch {
-			l.readChar()
-		}
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\n' {
+		l.readChar()
 	}
 }

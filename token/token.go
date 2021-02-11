@@ -19,6 +19,10 @@ func NewIdentifierToken(literal string) *Token {
 	return &Token{Type: lookupIdentifier(literal), Literal: literal}
 }
 
+func NewIntegerToken(literal string) *Token {
+	return &Token{Type: INT, Literal: literal}
+}
+
 func NewEOF() *Token {
 	return &Token{Type: EOF, Literal: ""}
 }
