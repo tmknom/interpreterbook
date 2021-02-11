@@ -22,6 +22,16 @@ type Program struct {
 
 var _ Node = (*Program)(nil)
 
+func NewProgram() *Program {
+	return &Program{
+		Statements: []Statement{},
+	}
+}
+
+func (p *Program) AddStatement(stmt Statement) {
+	p.Statements = append(p.Statements, stmt)
+}
+
 func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
 		return p.Statements[0].TokenLiteral()
@@ -38,6 +48,19 @@ type LetStatement struct {
 
 var _ Statement = (*LetStatement)(nil)
 
+func NewLetStatement(name *Identifier) *LetStatement {
+	return &LetStatement{
+		Token: letToken,
+		Name:  name,
+	}
+}
+
+func NewLetStatementByName(name string) *LetStatement {
+	return NewLetStatement(NewIdentifierByName(name))
+}
+
+var letToken = token.NewToken(token.LET, "let")
+
 func (s LetStatement) statementNode() {}
 
 func (s LetStatement) TokenLiteral() string {
@@ -50,6 +73,18 @@ type Identifier struct {
 }
 
 var _ Expression = (*Identifier)(nil)
+
+func NewIdentifier(token *token.Token) *Identifier {
+	return &Identifier{
+		Token: token,
+	}
+}
+
+func NewIdentifierByName(name string) *Identifier {
+	return &Identifier{
+		Token: token.NewIdentifierToken(name),
+	}
+}
 
 func (i Identifier) expressionNode() {}
 
