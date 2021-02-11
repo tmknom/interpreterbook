@@ -28,6 +28,7 @@ let foobar = 838383;
 
 	p := NewParser(lexer.NewLexer(input))
 	program := p.ParseProgram()
+	p.checkParserError(t)
 
 	if program == nil {
 		t.Fatalf("ParseProgram() returned nil")
@@ -39,10 +40,29 @@ let foobar = 838383;
 	}
 
 	for i, tc := range cases {
-		got := program.Statements[i].(*ast.LetStatement)
+		stmt := program.Statements[i]
+		got, ok := stmt.(*ast.LetStatement)
+		if !ok {
+			t.Errorf("stmt not *ast.LetStatement: %+v", stmt)
+			continue
+		}
+
 		opt := cmpopts.IgnoreUnexported(*got.Token)
 		if diff := cmp.Diff(got, tc.want[i], opt); diff != "" {
 			t.Errorf("failed statement: diff (-got +want):\n%s", diff)
 		}
 	}
+}
+
+func (p *Parser) checkParserError(t *testing.T) {
+	errors := p.Errors()
+	if len(errors) == 0 {
+		return
+	}
+
+	t.Errorf("parser has %d errors", len(errors))
+	for _, err := range errors {
+		t.Errorf("parser error: %s", err)
+	}
+	t.FailNow()
 }
