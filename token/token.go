@@ -27,6 +27,10 @@ func NewEOF() *Token {
 	return &Token{Type: EOF, Literal: ""}
 }
 
+func (t *Token) IsEOF() bool {
+	return t.Type == EOF
+}
+
 const (
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
