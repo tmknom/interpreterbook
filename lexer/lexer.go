@@ -5,14 +5,18 @@ import (
 )
 
 type Lexer struct {
-	input        string // 字句解析対象の入力文字列
-	position     int    // 入力における現在の位置／現在の文字を指し示す
-	readPosition int    // これから読み込む位置／現在の文字の次
-	ch           byte   // 現在検査中の文字
+	input        string       // 字句解析対象の入力文字列
+	position     int          // 入力における現在の位置／現在の文字を指し示す
+	readPosition int          // これから読み込む位置／現在の文字の次
+	ch           byte         // 現在検査中の文字
+	debugTracer  *DebugTracer // デバッグ詳細情報のトレーサー
 }
 
 func NewLexer(input string) *Lexer {
-	l := &Lexer{input: input}
+	l := &Lexer{
+		input:       input,
+		debugTracer: newDebugTracer(),
+	}
 	l.readChar()
 	return l
 }
@@ -79,6 +83,9 @@ func (l *Lexer) NextToken() *token.Token {
 		tok = token.NewTokenByChar(token.ILLEGAL, l.ch)
 	}
 
+	// デバッグ用に詳細情報をトークンに追加
+	tok.SetDetail(l.detail())
+
 	l.readChar()
 	return tok
 }
@@ -90,7 +97,7 @@ func (l *Lexer) readIdentifier() *token.Token {
 		l.readChar()
 	}
 	literal := l.input[beginPosition:l.position]
-	return token.NewIdentifierToken(literal)
+	return token.NewIdentifierToken(literal, l.detail())
 }
 
 // 使用可能な文字かチェックする
@@ -105,7 +112,8 @@ func (l *Lexer) readNumber() *token.Token {
 		l.readChar()
 	}
 	literal := l.input[beginPosition:l.position]
-	return token.NewIntegerToken(literal)
+
+	return token.NewIntegerToken(literal, l.detail())
 }
 
 // 数字かチェックする
@@ -117,6 +125,9 @@ func (l *Lexer) isDigit() bool {
 // positionは常にreadPositionの次を指し示す
 // 終端までいったらASCIIコードのNUL文字をセットする
 func (l *Lexer) readChar() {
+	// デバッグ用
+	l.debugTracer.appendChar(l.ch)
+
 	l.ch = l.peekChar()
 	l.position = l.readPosition
 	l.readPosition += 1
@@ -134,6 +145,16 @@ func (l *Lexer) peekChar() byte {
 // 空白改行を無視する
 func (l *Lexer) skipWhitespace() {
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\n' {
+		// デバッグ用
+		if l.ch == '\n' {
+			l.debugTracer.incrementLine()
+			l.debugTracer.resetLine()
+		}
+
 		l.readChar()
 	}
+}
+
+func (l *Lexer) detail() *token.DetailToken {
+	return token.NewDetailToken(l.debugTracer.Line, l.debugTracer.LineNumber, l.debugTracer.columnNumber())
 }
