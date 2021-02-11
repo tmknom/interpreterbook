@@ -25,13 +25,27 @@ func (l *Lexer) NextToken() *token.Token {
 
 	switch l.ch {
 	case '=':
-		tok = token.NewTokenByChar(token.ASSIGN, l.ch)
+		if l.peekChar() == '=' {
+			first := l.ch // 1文字目を保存
+			l.readChar()  // 2文字目を読む
+			literal := string(first) + string(l.ch)
+			tok = token.NewToken(token.EQ, literal)
+		} else {
+			tok = token.NewTokenByChar(token.ASSIGN, l.ch)
+		}
+	case '!':
+		if l.peekChar() == '=' {
+			first := l.ch // 1文字目を保存
+			l.readChar()  // 2文字目を読む
+			literal := string(first) + string(l.ch)
+			tok = token.NewToken(token.NOT_EQ, literal)
+		} else {
+			tok = token.NewTokenByChar(token.BANG, l.ch)
+		}
 	case '+':
 		tok = token.NewTokenByChar(token.PLUS, l.ch)
 	case '-':
 		tok = token.NewTokenByChar(token.MINUS, l.ch)
-	case '!':
-		tok = token.NewTokenByChar(token.BANG, l.ch)
 	case '*':
 		tok = token.NewTokenByChar(token.ASTERISK, l.ch)
 	case '/':
@@ -103,13 +117,18 @@ func (l *Lexer) isDigit() bool {
 // positionは常にreadPositionの次を指し示す
 // 終端までいったらASCIIコードのNUL文字をセットする
 func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0 // NUL文字
-	} else {
-		l.ch = l.input[l.readPosition]
-	}
+	l.ch = l.peekChar()
 	l.position = l.readPosition
 	l.readPosition += 1
+}
+
+// 次の一文字を覗き見（peek）する
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0 // NUL文字
+	} else {
+		return l.input[l.readPosition]
+	}
 }
 
 // 空白改行を無視する

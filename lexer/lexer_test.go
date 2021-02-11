@@ -24,6 +24,9 @@ if (5 < 10) {
 } else {
 	return false;
 }
+
+10 == 10;
+10 != 9;
 `
 
 	tests := []struct {
@@ -95,6 +98,14 @@ if (5 < 10) {
 		{token.FALSE, "false"},
 		{token.SEMICOLON, ";"},
 		{token.RBRACE, "}"},
+		{token.INT, "10"},
+		{token.EQ, "=="},
+		{token.INT, "10"},
+		{token.SEMICOLON, ";"},
+		{token.INT, "10"},
+		{token.NOT_EQ, "!="},
+		{token.INT, "9"},
+		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
 	}
 
@@ -112,12 +123,12 @@ if (5 < 10) {
 		}
 
 		if tok.Type != tt.expectedType {
-			t.Errorf("tests[%d] - TokenType wrong. expected=%q, got=%q",
+			t.Fatalf("tests[%d] - TokenType wrong. expected=%q, got=%q",
 				i, tt.expectedType, tok.Type)
 		}
 
 		if tok.Literal != tt.expectedLiteral {
-			t.Errorf("tests[%d] - Literal wrong. expected=%q, got=%q",
+			t.Fatalf("tests[%d] - Literal wrong. expected=%q, got=%q",
 				i, tt.expectedLiteral, tok.Literal)
 		}
 	}
