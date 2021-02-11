@@ -18,6 +18,9 @@ func NewLexer(input string) *Lexer {
 }
 
 func (l *Lexer) NextToken() *token.Token {
+	// 空白改行は読み飛ばす
+	l.skipWhitespace()
+
 	var tok *token.Token
 
 	switch l.ch {
@@ -77,4 +80,20 @@ func (l *Lexer) readChar() {
 	}
 	l.position = l.readPosition
 	l.readPosition += 1
+}
+
+// 空白改行を無視する
+func (l *Lexer) skipWhitespace() {
+	whitespaceCharacters := []byte{
+		' ',
+		'\t',
+		'\r',
+		'\n',
+	}
+
+	for _, ch := range whitespaceCharacters {
+		if l.ch == ch {
+			l.readChar()
+		}
+	}
 }

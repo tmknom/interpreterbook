@@ -7,21 +7,18 @@ import (
 )
 
 func TestLexerNextToken(t *testing.T) {
-	input := `=+(){},;let`
+	input := `
+let five = ;
+`
 
 	tests := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
 	}{
-		{token.ASSIGN, "="},
-		{token.PLUS, "+"},
-		{token.LPAREN, "("},
-		{token.RPAREN, ")"},
-		{token.LBRACE, "{"},
-		{token.RBRACE, "}"},
-		{token.COMMA, ","},
-		{token.SEMICOLON, ";"},
 		{token.LET, "let"},
+		{token.IDENT, "five"},
+		{token.ASSIGN, "="},
+		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
 	}
 
