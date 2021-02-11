@@ -97,7 +97,10 @@ func (l *Lexer) readIdentifier() *token.Token {
 		l.readChar()
 	}
 	literal := l.input[beginPosition:l.position]
-	return token.NewIdentifierToken(literal, l.detail())
+
+	tok := token.NewIdentifierToken(literal)
+	tok.SetDetail(l.detail())
+	return tok
 }
 
 // 使用可能な文字かチェックする
@@ -113,7 +116,9 @@ func (l *Lexer) readNumber() *token.Token {
 	}
 	literal := l.input[beginPosition:l.position]
 
-	return token.NewIntegerToken(literal, l.detail())
+	tok := token.NewIntegerToken(literal)
+	tok.SetDetail(l.detail())
+	return tok
 }
 
 // 数字かチェックする

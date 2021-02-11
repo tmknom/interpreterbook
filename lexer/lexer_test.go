@@ -119,17 +119,17 @@ if (5 < 10) {
 		//}
 
 		if tok.Type == token.ILLEGAL {
-			t.Fatalf("tests[%d] - illegal token: '%s', detail=%s", i, tok.Literal, tok.DetailToken)
+			t.Fatalf("tests[%d] - illegal token: '%s', detail=%s", i, tok.Literal, tok.Detail())
 		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - TokenType wrong. expected=%q, got=%q, detail=%s",
-				i, tt.expectedType, tok.Type, tok.DetailToken)
+				i, tt.expectedType, tok.Type, tok.Detail())
 		}
 
 		if tok.Literal != tt.expectedLiteral {
 			t.Fatalf("tests[%d] - Literal wrong. expected=%q, got=%q, detail=%s",
-				i, tt.expectedLiteral, tok.Literal, tok.DetailToken)
+				i, tt.expectedLiteral, tok.Literal, tok.Detail())
 		}
 	}
 }

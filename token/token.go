@@ -5,7 +5,7 @@ type TokenType string
 type Token struct {
 	Type    TokenType
 	Literal string
-	*DetailToken
+	detail  *DetailToken
 }
 
 func NewToken(tokenType TokenType, literal string) *Token {
@@ -19,15 +19,13 @@ func NewTokenByChar(tokenType TokenType, ch byte) *Token {
 	return NewToken(tokenType, string(ch))
 }
 
-func NewIdentifierToken(literal string, detail *DetailToken) *Token {
+func NewIdentifierToken(literal string) *Token {
 	tok := NewToken(lookupIdentifier(literal), literal)
-	tok.SetDetail(detail)
 	return tok
 }
 
-func NewIntegerToken(literal string, detail *DetailToken) *Token {
+func NewIntegerToken(literal string) *Token {
 	tok := NewToken(INT, literal)
-	tok.SetDetail(detail)
 	return tok
 }
 
@@ -36,11 +34,15 @@ func NewEOF() *Token {
 }
 
 func (t *Token) SetDetail(detail *DetailToken) {
-	t.DetailToken = detail
+	t.detail = detail
 }
 
 func (t *Token) IsEOF() bool {
 	return t.Type == EOF
+}
+
+func (t *Token) Detail() *DetailToken {
+	return t.detail
 }
 
 const (
