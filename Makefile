@@ -22,6 +22,9 @@ clean-test: cache test vet ## Clean and Test
 test: fmt ## Test
 	go test ./parser
 
+test-all: fmt ## Test all
+	go test $$(go list ./... | grep -v zz_example)
+
 vet: ## Vet
 	go vet $$(go list ./... | grep -v zz_example)
 
