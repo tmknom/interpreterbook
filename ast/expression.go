@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"bytes"
 	"monkey/token"
 	"strconv"
 )
@@ -28,13 +29,13 @@ func NewIdentifierByName(name string) *Identifier {
 	return NewIdentifier(token.NewIdentifierToken(name))
 }
 
-func (i Identifier) expressionNode() {}
+func (i *Identifier) expressionNode() {}
 
-func (i Identifier) TokenLiteral() string {
+func (i *Identifier) TokenLiteral() string {
 	return i.Token.Literal
 }
 
-func (i Identifier) String() string {
+func (i *Identifier) String() string {
 	return i.Value
 }
 
@@ -56,12 +57,51 @@ func NewIntegerLiteralByValue(value int64) *IntegerLiteral {
 	return NewIntegerLiteral(token.NewIntegerToken(strconv.FormatInt(value, 10)), value)
 }
 
-func (i IntegerLiteral) expressionNode() {}
+func (i *IntegerLiteral) expressionNode() {}
 
-func (i IntegerLiteral) TokenLiteral() string {
+func (i *IntegerLiteral) TokenLiteral() string {
 	return i.Token.Literal
 }
 
-func (i IntegerLiteral) String() string {
+func (i *IntegerLiteral) String() string {
 	return i.Token.Literal
+}
+
+type PrefixExpression struct {
+	Token    *token.Token // 前置トークン／たとえば「!」
+	Operator string
+	Right    Expression
+}
+
+var _ Expression = (*PrefixExpression)(nil)
+
+func NewPrefixExpression(token *token.Token) *PrefixExpression {
+	return &PrefixExpression{
+		Token:    token,
+		Operator: token.Literal,
+	}
+}
+
+//func NewIntegerLiteralByValue(value int64) *IntegerLiteral {
+//	return NewIntegerLiteral(token.NewIntegerToken(strconv.FormatInt(value, 10)), value)
+//}
+
+func (e *PrefixExpression) SetRight(right Expression) {
+	e.Right = right
+}
+
+func (e *PrefixExpression) expressionNode() {}
+
+func (e *PrefixExpression) TokenLiteral() string {
+	return e.Token.Literal
+}
+
+func (e *PrefixExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString(e.Operator)
+	out.WriteString(e.Right.String())
+	out.WriteString(")")
+
+	return out.String()
 }
