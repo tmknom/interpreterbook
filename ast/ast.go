@@ -67,6 +67,28 @@ func (s LetStatement) TokenLiteral() string {
 	return s.Token.Literal
 }
 
+type ReturnStatement struct {
+	Token       *token.Token // token.RETURN トークン
+	ReturnValue Expression
+}
+
+var _ Statement = (*ReturnStatement)(nil)
+
+func NewReturnStatement() *ReturnStatement {
+	return &ReturnStatement{
+		Token: returnToken,
+		//ReturnValue: returnValue,
+	}
+}
+
+var returnToken = token.NewToken(token.RETURN, "return")
+
+func (s ReturnStatement) statementNode() {}
+
+func (s ReturnStatement) TokenLiteral() string {
+	return s.Token.Literal
+}
+
 type Identifier struct {
 	Token *token.Token // token.IDENT トークン
 	Value Expression
