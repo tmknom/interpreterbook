@@ -10,6 +10,18 @@ import (
 
 type prefixParseFn func() ast.Expression              // 前置構文解析関数
 type infixParseFn func(ast.Expression) ast.Expression // 中置構文解析関数
+type precedence int
+
+const (
+	_ precedence = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
+)
 
 type Parser struct {
 	l            *lexer.Lexer
@@ -31,6 +43,9 @@ func NewParser(l *lexer.Lexer) *Parser {
 	// currentTokenとpeekTokenの両方がセットされる
 	p.nextToken()
 	p.nextToken()
+
+	// Expression用の関数の初期化
+	p.initExpressionFunctions()
 
 	return p
 }
@@ -65,12 +80,4 @@ func (p *Parser) peekError(t token.TokenType) {
 
 func (p *Parser) Errors() []error {
 	return p.errors
-}
-
-func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
-	p.prefixParseFns[tokenType] = fn
-}
-
-func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
-	p.infixParseFns[tokenType] = fn
 }

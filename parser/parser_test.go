@@ -1,10 +1,12 @@
-package parser
+package parser_test
 
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"monkey/ast"
 	"monkey/lexer"
+	"monkey/parser"
+	"monkey/token"
 	"testing"
 )
 
@@ -26,9 +28,9 @@ let foobar = 838383;
 		},
 	}
 
-	p := NewParser(lexer.NewLexer(input))
+	p := parser.NewParser(lexer.NewLexer(input))
 	program := p.ParseProgram()
-	p.checkParserError(t)
+	checkParserError(t, p)
 
 	if program == nil {
 		t.Fatalf("ParseProgram() returned nil")
@@ -72,9 +74,9 @@ return 993322;
 		},
 	}
 
-	p := NewParser(lexer.NewLexer(input))
+	p := parser.NewParser(lexer.NewLexer(input))
 	program := p.ParseProgram()
-	p.checkParserError(t)
+	checkParserError(t, p)
 
 	if len(program.Statements) != 3 {
 		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
@@ -96,7 +98,48 @@ return 993322;
 	}
 }
 
-func (p *Parser) checkParserError(t *testing.T) {
+func TestIdentifierExpression(t *testing.T) {
+	input := `
+foobar;
+`
+	cases := []struct {
+		want []*ast.ExpressionStatement
+	}{
+		{
+			want: []*ast.ExpressionStatement{
+				&ast.ExpressionStatement{
+					Token:      token.NewIdentifierToken("foobar"),
+					Expression: ast.NewIdentifierByName("foobar"),
+				},
+			},
+		},
+	}
+
+	p := parser.NewParser(lexer.NewLexer(input))
+	program := p.ParseProgram()
+	checkParserError(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+			len(program.Statements))
+	}
+
+	for i, tc := range cases {
+		stmt := program.Statements[i]
+		got, ok := stmt.(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("stmt not *ast.ExpressionStatement: %+v", stmt)
+			continue
+		}
+
+		opt := cmpopts.IgnoreUnexported(*got.Token)
+		if diff := cmp.Diff(got, tc.want[i], opt); diff != "" {
+			t.Errorf("failed statement: diff (-got +want):\n%s", diff)
+		}
+	}
+}
+
+func checkParserError(t *testing.T, p *parser.Parser) {
 	errors := p.Errors()
 	if len(errors) == 0 {
 		return

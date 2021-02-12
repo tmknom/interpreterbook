@@ -25,13 +25,12 @@ var _ Expression = (*Identifier)(nil)
 func NewIdentifier(token *token.Token) *Identifier {
 	return &Identifier{
 		Token: token,
+		Value: token.Literal,
 	}
 }
 
 func NewIdentifierByName(name string) *Identifier {
-	return &Identifier{
-		Token: token.NewIdentifierToken(name),
-	}
+	return NewIdentifier(token.NewIdentifierToken(name))
 }
 
 func (i Identifier) expressionNode() {}

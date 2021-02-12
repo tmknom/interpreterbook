@@ -12,7 +12,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -51,6 +51,19 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 	// TODO セミコロンに遭遇するまで読み飛ばす
 	for !p.currentTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := ast.NewExpressionStatement(p.currentToken)
+	exp := p.parseExpression(LOWEST)
+	stmt.SetExpression(exp)
+
+	// セミコロンを省略可能にするため、セミコロンを見つけたらひとつ進める
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 

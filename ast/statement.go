@@ -31,13 +31,13 @@ func NewLetStatementByName(name string) *LetStatement {
 
 var letToken = token.NewToken(token.LET, "let")
 
-func (s LetStatement) statementNode() {}
+func (s *LetStatement) statementNode() {}
 
-func (s LetStatement) TokenLiteral() string {
+func (s *LetStatement) TokenLiteral() string {
 	return s.Token.Literal
 }
 
-func (s LetStatement) String() string {
+func (s *LetStatement) String() string {
 	var out bytes.Buffer
 
 	out.WriteString(s.TokenLiteral() + " ")
@@ -68,13 +68,13 @@ func NewReturnStatement() *ReturnStatement {
 
 var returnToken = token.NewToken(token.RETURN, "return")
 
-func (s ReturnStatement) statementNode() {}
+func (s *ReturnStatement) statementNode() {}
 
-func (s ReturnStatement) TokenLiteral() string {
+func (s *ReturnStatement) TokenLiteral() string {
 	return s.Token.Literal
 }
 
-func (s ReturnStatement) String() string {
+func (s *ReturnStatement) String() string {
 	var out bytes.Buffer
 
 	out.WriteString(s.TokenLiteral() + " ")
@@ -100,13 +100,17 @@ func NewExpressionStatement(token *token.Token) *ExpressionStatement {
 	}
 }
 
-func (s ExpressionStatement) statementNode() {}
+func (s *ExpressionStatement) SetExpression(expression Expression) {
+	s.Expression = expression
+}
 
-func (s ExpressionStatement) TokenLiteral() string {
+func (s *ExpressionStatement) statementNode() {}
+
+func (s *ExpressionStatement) TokenLiteral() string {
 	return s.Token.Literal
 }
 
-func (s ExpressionStatement) String() string {
+func (s *ExpressionStatement) String() string {
 	if s.Expression != nil {
 		return s.Expression.String()
 	}
