@@ -324,6 +324,41 @@ func TestParsingInfixExpressions(t *testing.T) {
 	}
 }
 
+func TestOperatorPrecedenceParsing(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			"3 + 4; -5 * 5",
+			"(3 + 4)((-5) * 5)",
+		},
+		{
+			"5 > 4 == 3 < 4",
+			"((5 > 4) == (3 < 4))",
+		},
+		{
+			"5 < 4 != 3 > 4",
+			"((5 < 4) != (3 > 4))",
+		},
+		{
+			"3 + 4 * 5 == 3 * 1 + 4 * 5",
+			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		},
+	}
+
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
+
+		actual := program.String()
+		if actual != tc.want {
+			t.Errorf("want=%q, got=%q", tc.want, actual)
+		}
+	}
+}
+
 func newInfixExpression(left ast.Expression, t *token.Token, right ast.Expression) *ast.InfixExpression {
 	return &ast.InfixExpression{
 		Token:    t,
@@ -359,7 +394,7 @@ func checkParserError(t *testing.T, p *parser.Parser) {
 		return
 	}
 
-	t.Errorf("parser has %d errors", len(errors))
+	t.Errorf("parser has %d errors, input = %q", len(errors), p.Input())
 	for _, err := range errors {
 		t.Errorf("parser error: %s", err)
 	}

@@ -112,3 +112,7 @@ func (p *Parser) debug() string {
 	return fmt.Sprintf("current=%s, peek=%s",
 		p.currentToken.Debug(), p.peekToken.Debug())
 }
+
+func (p *Parser) Input() string {
+	return p.l.Input()
+}
