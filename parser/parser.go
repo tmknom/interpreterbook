@@ -3,15 +3,22 @@ package parser
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"monkey/ast"
 	"monkey/lexer"
 	"monkey/token"
 )
+
+type prefixParseFn func() ast.Expression              // 前置構文解析関数
+type infixParseFn func(ast.Expression) ast.Expression // 中置構文解析関数
 
 type Parser struct {
 	l            *lexer.Lexer
 	currentToken *token.Token
 	peekToken    *token.Token
 	errors       []error
+
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 func NewParser(l *lexer.Lexer) *Parser {
@@ -58,4 +65,12 @@ func (p *Parser) peekError(t token.TokenType) {
 
 func (p *Parser) Errors() []error {
 	return p.errors
+}
+
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
 }
