@@ -14,8 +14,17 @@ func (p *Parser) parseExpression(precedence precedence) ast.Expression {
 		p.noPrefixParseFnError(p.currentToken.Type)
 		return nil
 	}
-
 	leftExp := prefix()
+
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+		infix := p.infixParseFns[p.peekToken.Type]
+		if infix == nil {
+			return leftExp
+		}
+		p.nextToken()
+		leftExp = infix(leftExp)
+	}
+
 	return leftExp
 }
 
@@ -53,6 +62,18 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expression := ast.NewInfixExpression(p.currentToken, left)
+
+	precedence := p.currentPrecedence()
+	p.nextToken()
+
+	right := p.parseExpression(precedence)
+	expression.SetRight(right)
+
+	return expression
+}
+
 func (p *Parser) initExpressionFunctions() {
 	p.prefixParseFns = map[token.TokenType]prefixParseFn{}
 	p.infixParseFns = map[token.TokenType]infixParseFn{}
@@ -61,6 +82,15 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+
+	p.registerInfix(token.PLUS, p.parseInfixExpression)
+	p.registerInfix(token.MINUS, p.parseInfixExpression)
+	p.registerInfix(token.SLASH, p.parseInfixExpression)
+	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
+	p.registerInfix(token.EQ, p.parseInfixExpression)
+	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
+	p.registerInfix(token.LT, p.parseInfixExpression)
+	p.registerInfix(token.GT, p.parseInfixExpression)
 }
 
 func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {

@@ -82,10 +82,6 @@ func NewPrefixExpression(token *token.Token) *PrefixExpression {
 	}
 }
 
-//func NewIntegerLiteralByValue(value int64) *IntegerLiteral {
-//	return NewIntegerLiteral(token.NewIntegerToken(strconv.FormatInt(value, 10)), value)
-//}
-
 func (e *PrefixExpression) SetRight(right Expression) {
 	e.Right = right
 }
@@ -100,6 +96,44 @@ func (e *PrefixExpression) String() string {
 	var out bytes.Buffer
 	out.WriteString("(")
 	out.WriteString(e.Operator)
+	out.WriteString(e.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+type InfixExpression struct {
+	Token    *token.Token // 演算子トークン／たとえば「+」
+	Left     Expression
+	Operator string
+	Right    Expression
+}
+
+var _ Expression = (*InfixExpression)(nil)
+
+func NewInfixExpression(token *token.Token, left Expression) *InfixExpression {
+	return &InfixExpression{
+		Token:    token,
+		Operator: token.Literal,
+		Left:     left,
+	}
+}
+
+func (e *InfixExpression) SetRight(right Expression) {
+	e.Right = right
+}
+
+func (e *InfixExpression) expressionNode() {}
+
+func (e *InfixExpression) TokenLiteral() string {
+	return e.Token.Literal
+}
+
+func (e *InfixExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString(e.Left.String())
+	out.WriteString(" " + e.Operator + " ")
 	out.WriteString(e.Right.String())
 	out.WriteString(")")
 
