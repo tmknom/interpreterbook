@@ -107,3 +107,8 @@ func (p *Parser) peekError(t token.TokenType) {
 func (p *Parser) Errors() []error {
 	return p.errors
 }
+
+func (p *Parser) debug() string {
+	return fmt.Sprintf("current=%s, peek=%s",
+		p.currentToken.Debug(), p.peekToken.Debug())
+}

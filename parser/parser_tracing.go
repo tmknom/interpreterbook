@@ -5,16 +5,19 @@ import (
 	"strings"
 )
 
+var Debug = false
 var traceLevel int = 0
 
-const traceIdentPlaceholder string = "\t"
+const traceIdentPlaceholder string = "    "
 
 func identLevel() string {
 	return strings.Repeat(traceIdentPlaceholder, traceLevel-1)
 }
 
 func tracePrint(fs string) {
-	fmt.Printf("%s%s\n", identLevel(), fs)
+	if Debug {
+		fmt.Printf("%s%s\n", identLevel(), fs)
+	}
 }
 
 func incIdent() { traceLevel = traceLevel + 1 }
@@ -29,4 +32,10 @@ func trace(msg string) string {
 func untrace(msg string) {
 	tracePrint("END " + msg)
 	decIdent()
+}
+
+func traceDetail(msg string) {
+	tracePrint("")
+	tracePrint(traceIdentPlaceholder + "DETAIL " + msg)
+	tracePrint("")
 }

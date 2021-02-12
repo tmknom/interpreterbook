@@ -9,6 +9,8 @@ import (
 )
 
 func (p *Parser) parseExpression(precedence precedence) ast.Expression {
+	trace(fmt.Sprintf("parseExpression(): {%s}", p.debug()))
+
 	prefix := p.prefixParseFns[p.currentToken.Type]
 	if prefix == nil {
 		p.noPrefixParseFnError(p.currentToken.Type)
@@ -16,6 +18,7 @@ func (p *Parser) parseExpression(precedence precedence) ast.Expression {
 	}
 	leftExp := prefix()
 
+	traceDetail(fmt.Sprintf("if precedence(%d) < p.peekPrecedence(%d) then call infixParseFn", precedence, p.peekPrecedence()))
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
@@ -23,8 +26,10 @@ func (p *Parser) parseExpression(precedence precedence) ast.Expression {
 		}
 		p.nextToken()
 		leftExp = infix(leftExp)
+		traceDetail(fmt.Sprintf("if precedence(%d) < p.peekPrecedence(%d) then call infixParseFn", precedence, p.peekPrecedence()))
 	}
 
+	untrace(fmt.Sprintf("parseExpression() => return Expression{%q}", leftExp))
 	return leftExp
 }
 
@@ -39,6 +44,8 @@ func (p *Parser) parseIdentifier() ast.Expression {
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
+	trace(fmt.Sprintf("parseIntegerLiteral(): {%s}", p.debug()))
+
 	value, err := strconv.ParseInt(p.currentToken.Literal, 0, 64)
 	if err != nil {
 		message := fmt.Sprintf("could not parse %q as integer", p.peekToken.Literal)
@@ -47,10 +54,14 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 		return nil
 	}
 
-	return ast.NewIntegerLiteral(p.currentToken, value)
+	expression := ast.NewIntegerLiteral(p.currentToken, value)
+	untrace(fmt.Sprintf("parseIntegerLiteral() => return IntegerLiteral{%q}", expression))
+	return expression
 }
 
 func (p *Parser) parsePrefixExpression() ast.Expression {
+	trace(fmt.Sprintf("parsePrefixExpression(): {%s}", p.debug()))
+
 	expression := ast.NewPrefixExpression(p.currentToken)
 
 	// 前置トークンの次を参照するため、ひとつ進めておく
@@ -59,10 +70,14 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	right := p.parseExpression(PREFIX)
 	expression.SetRight(right)
 
+	untrace(fmt.Sprintf("parsePrefixExpression() => return PrefixExpression{%q}", expression))
 	return expression
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	trace(fmt.Sprintf("parseInfixExpression(left=%q): {%s}", left, p.debug()))
+
+	traceDetail(fmt.Sprintf("new InfixExpression{left=%q, operator=%q}", left, p.currentToken.Literal))
 	expression := ast.NewInfixExpression(p.currentToken, left)
 
 	precedence := p.currentPrecedence()
@@ -71,6 +86,7 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	right := p.parseExpression(precedence)
 	expression.SetRight(right)
 
+	untrace(fmt.Sprintf("parseInfixExpression() => return InfixExpression{%q}", expression))
 	return expression
 }
 

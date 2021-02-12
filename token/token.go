@@ -1,5 +1,7 @@
 package token
 
+import "fmt"
+
 type TokenType string
 
 type Token struct {
@@ -43,6 +45,13 @@ func (t *Token) IsEOF() bool {
 
 func (t *Token) Detail() *DetailToken {
 	return t.detail
+}
+
+func (t *Token) Debug() string {
+	if t.Type == IDENT || t.Type == INT {
+		return fmt.Sprintf("%s(%q)", t.Type, t.Literal)
+	}
+	return fmt.Sprintf("%q", t.Literal)
 }
 
 const (
