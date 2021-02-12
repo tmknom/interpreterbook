@@ -139,6 +139,47 @@ foobar;
 	}
 }
 
+func TestIntegerLiteralExpression(t *testing.T) {
+	input := `
+5;
+`
+	cases := []struct {
+		want []*ast.ExpressionStatement
+	}{
+		{
+			want: []*ast.ExpressionStatement{
+				&ast.ExpressionStatement{
+					Token:      token.NewIntegerToken("5"),
+					Expression: ast.NewIntegerLiteralByValue(5),
+				},
+			},
+		},
+	}
+
+	p := parser.NewParser(lexer.NewLexer(input))
+	program := p.ParseProgram()
+	checkParserError(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+			len(program.Statements))
+	}
+
+	for i, tc := range cases {
+		stmt := program.Statements[i]
+		got, ok := stmt.(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("stmt not *ast.ExpressionStatement: %+v", stmt)
+			continue
+		}
+
+		opt := cmpopts.IgnoreUnexported(*got.Token)
+		if diff := cmp.Diff(got, tc.want[i], opt); diff != "" {
+			t.Errorf("failed statement: diff (-got +want):\n%s", diff)
+		}
+	}
+}
+
 func checkParserError(t *testing.T, p *parser.Parser) {
 	errors := p.Errors()
 	if len(errors) == 0 {
