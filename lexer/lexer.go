@@ -163,3 +163,7 @@ func (l *Lexer) skipWhitespace() {
 func (l *Lexer) detail() *token.DetailToken {
 	return token.NewDetailToken(l.debugTracer.Line, l.debugTracer.LineNumber, l.debugTracer.columnNumber())
 }
+
+func (l *Lexer) Input() string {
+	return l.input
+}

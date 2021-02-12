@@ -8,11 +8,41 @@ import (
 	"monkey/token"
 )
 
+type prefixParseFn func() ast.Expression              // 前置構文解析関数
+type infixParseFn func(ast.Expression) ast.Expression // 中置構文解析関数
+type precedence int
+
+const (
+	_ precedence = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
+)
+
+var precedences = map[token.TokenType]precedence{
+	token.EQ:       EQUALS,
+	token.NOT_EQ:   EQUALS,
+	token.LT:       LESSGREATER,
+	token.GT:       LESSGREATER,
+	token.PLUS:     SUM,
+	token.MINUS:    SUM,
+	token.SLASH:    PRODUCT,
+	token.ASTERISK: PRODUCT,
+	token.LPAREN:   CALL,
+}
+
 type Parser struct {
 	l            *lexer.Lexer
 	currentToken *token.Token
 	peekToken    *token.Token
 	errors       []error
+
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 func NewParser(l *lexer.Lexer) *Parser {
@@ -26,56 +56,15 @@ func NewParser(l *lexer.Lexer) *Parser {
 	p.nextToken()
 	p.nextToken()
 
+	// Expression用の関数の初期化
+	p.initExpressionFunctions()
+
 	return p
 }
 
 func (p *Parser) nextToken() {
 	p.currentToken = p.peekToken
 	p.peekToken = p.l.NextToken()
-}
-
-func (p *Parser) ParseProgram() *ast.Program {
-	program := ast.NewProgram()
-	for !p.currentToken.IsEOF() {
-		stmt := p.parseStatement()
-		if stmt != nil {
-			program.AddStatement(stmt)
-		}
-		p.nextToken()
-	}
-	return program
-}
-
-func (p *Parser) parseStatement() ast.Statement {
-	switch p.currentToken.Type {
-	case token.LET:
-		return p.parseLetStatement()
-	default:
-		return nil
-	}
-}
-
-func (p *Parser) parseLetStatement() *ast.LetStatement {
-	if !p.currentTokenIs(token.LET) {
-		return nil
-	}
-
-	if !p.expectPeek(token.IDENT) {
-		return nil
-	}
-
-	name := ast.NewIdentifier(p.currentToken)
-	stmt := ast.NewLetStatement(name)
-
-	if !p.expectPeek(token.ASSIGN) {
-		return nil
-	}
-
-	for !p.currentTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
-
-	return stmt
 }
 
 func (p *Parser) currentTokenIs(t token.TokenType) bool {
@@ -95,6 +84,20 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	return false
 }
 
+func (p *Parser) peekPrecedence() precedence {
+	if p, ok := precedences[p.peekToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) currentPrecedence() precedence {
+	if p, ok := precedences[p.currentToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
 func (p *Parser) peekError(t token.TokenType) {
 	message := fmt.Sprintf("expected next token to be '%s', got: '%s', detail: %s", t, p.peekToken.Type, p.peekToken.Detail())
 	err := errors.New(message)
@@ -103,4 +106,13 @@ func (p *Parser) peekError(t token.TokenType) {
 
 func (p *Parser) Errors() []error {
 	return p.errors
+}
+
+func (p *Parser) debug() string {
+	return fmt.Sprintf("current=%s, peek=%s",
+		p.currentToken.Debug(), p.peekToken.Debug())
+}
+
+func (p *Parser) Input() string {
+	return p.l.Input()
 }
