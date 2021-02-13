@@ -32,8 +32,12 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	// TODO セミコロンに遭遇するまで読み飛ばす
-	for !p.currentTokenIs(token.SEMICOLON) {
+	p.nextToken()
+
+	expression := p.parseExpression(LOWEST)
+	stmt.SetValue(expression)
+
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 

@@ -25,11 +25,11 @@ func NewLetStatement(name *Identifier) *LetStatement {
 	}
 }
 
-func NewLetStatementByName(name string) *LetStatement {
-	return NewLetStatement(NewIdentifierByName(name))
-}
-
 var letToken = token.NewToken(token.LET, "let")
+
+func (s *LetStatement) SetValue(value Expression) {
+	s.Value = value
+}
 
 func (s *LetStatement) statementNode() {}
 

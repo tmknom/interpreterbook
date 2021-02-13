@@ -7,51 +7,60 @@ import (
 	"monkey/lexer"
 	"monkey/parser"
 	"monkey/token"
+	"strconv"
 	"testing"
 )
 
 func TestLetStatements(t *testing.T) {
-	input := `
-let x = 5;
-let y = 10;
-let foobar = 838383;
-`
 	cases := []struct {
-		want []*ast.LetStatement
+		input string
+		want  *ast.LetStatement
 	}{
 		{
-			want: []*ast.LetStatement{
-				ast.NewLetStatementByName("x"),
-				ast.NewLetStatementByName("y"),
-				ast.NewLetStatementByName("foobar"),
+			input: "let x = 5;",
+			want: &ast.LetStatement{
+				Token: token.NewIdentifierToken("let"),
+				Name:  ast.NewIdentifierByName("x"),
+				Value: ast.NewIntegerLiteralByValue(5),
+			},
+		},
+		{
+			input: "let y = true;",
+			want: &ast.LetStatement{
+				Token: token.NewIdentifierToken("let"),
+				Name:  ast.NewIdentifierByName("y"),
+				Value: ast.NewBooleanByValue("true"),
+			},
+		},
+		{
+			input: "let foobar = y;",
+			want: &ast.LetStatement{
+				Token: token.NewIdentifierToken("let"),
+				Name:  ast.NewIdentifierByName("foobar"),
+				Value: ast.NewIdentifierByName("y"),
 			},
 		},
 	}
 
-	p := parser.NewParser(lexer.NewLexer(input))
-	program := p.ParseProgram()
-	checkParserError(t, p)
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
 
-	if program == nil {
-		t.Fatalf("ParseProgram() returned nil")
-	}
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
 
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-			len(program.Statements))
-	}
-
-	for i, tc := range cases {
-		stmt := program.Statements[i]
-		got, ok := stmt.(*ast.LetStatement)
+		stmt, ok := program.Statements[0].(*ast.LetStatement)
 		if !ok {
-			t.Errorf("stmt not *ast.LetStatement: %+v", stmt)
+			t.Errorf("program.Statements[0] not *ast.LetStatement: %+v", stmt)
 			continue
 		}
 
-		opt := cmpopts.IgnoreUnexported(*got.Token)
-		if diff := cmp.Diff(got, tc.want[i], opt); diff != "" {
-			t.Errorf("failed statement: diff (-got +want):\n%s", diff)
+		opt := cmpopts.IgnoreUnexported(*stmt.Token)
+		if diff := cmp.Diff(stmt, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
 		}
 	}
 }
@@ -145,10 +154,7 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	}{
 		{
 			want: []*ast.ExpressionStatement{
-				&ast.ExpressionStatement{
-					Token:      token.NewIntegerToken("5"),
-					Expression: ast.NewIntegerLiteralByValue(5),
-				},
+				newIntegerLiteralExpressionStatement(5),
 			},
 		},
 	}
@@ -721,6 +727,13 @@ func newIdentifierExpressionStatement(identifier string) *ast.ExpressionStatemen
 	return &ast.ExpressionStatement{
 		Token:      token.NewIdentifierToken(identifier),
 		Expression: ast.NewIdentifierByName(identifier),
+	}
+}
+
+func newIntegerLiteralExpressionStatement(value int64) *ast.ExpressionStatement {
+	return &ast.ExpressionStatement{
+		Token:      token.NewIntegerToken(strconv.FormatInt(value, 10)),
+		Expression: ast.NewIntegerLiteralByValue(value),
 	}
 }
 
