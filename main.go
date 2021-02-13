@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	runDebugger()
+	runRepl()
 }
 
 func runRepl() {

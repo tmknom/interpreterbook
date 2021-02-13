@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"monkey/lexer"
+	"monkey/parser"
 )
 
 const PROMPT = ">> "
@@ -24,11 +25,37 @@ func Start(in io.Reader, out io.Writer) {
 		}
 
 		l := lexer.NewLexer(line)
-		for tok := l.NextToken(); !tok.IsEOF(); tok = l.NextToken() {
-			_, err := fmt.Fprintf(out, "%+v\n", tok)
-			if err != nil {
-				panic(err)
-			}
+		p := parser.NewParser(l)
+
+		program := p.ParseProgram()
+		if len(p.Errors()) > 0 {
+			printParserErrors(out, p.Errors())
+			continue
 		}
+
+		io.WriteString(out, program.String())
+		io.WriteString(out, "\n")
+	}
+}
+
+const MONKEY_FACE = `            __,__
+   .--.  .-"     "-.  .--.
+  / .. \/  .-. .-.  \/ .. \
+ | |  '|  /   Y   \  |'  | |
+ | \   \  \ 0 | 0 /  /   / |
+  \ '- ,\.-"""""""-./, -' /
+   ''-' /_   ^ ^   _\ '-''
+       |  \._   _./  |
+       \   \ '~' /   /
+        '._ '-=-' _.'
+           '-----'
+`
+
+func printParserErrors(out io.Writer, errors []error) {
+	io.WriteString(out, MONKEY_FACE)
+	io.WriteString(out, "Woops! We ran into some monkey business here!\n")
+	io.WriteString(out, "  parser errors:\n")
+	for _, err := range errors {
+		io.WriteString(out, fmt.Sprintf("      %+v\n", err))
 	}
 }
