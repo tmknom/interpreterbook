@@ -99,6 +99,21 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	trace(fmt.Sprintf("parseGroupedExpression(): {%s}", p.debug()))
+
+	p.nextToken()
+	expression := p.parseExpression(LOWEST)
+
+	traceDetail(fmt.Sprintf("if p.expectPeek(token.RPAREN) then ok: {%s}", p.debug()))
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	untrace(fmt.Sprintf("parseGroupedExpression() => return Expression{%q}", expression))
+	return expression
+}
+
 func (p *Parser) initExpressionFunctions() {
 	p.prefixParseFns = map[token.TokenType]prefixParseFn{}
 	p.infixParseFns = map[token.TokenType]infixParseFn{}
@@ -110,6 +125,8 @@ func (p *Parser) initExpressionFunctions() {
 
 	p.registerPrefix(token.TRUE, p.parseBoolean)
 	p.registerPrefix(token.FALSE, p.parseBoolean)
+
+	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)

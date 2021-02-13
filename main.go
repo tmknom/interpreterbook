@@ -24,7 +24,7 @@ func runRepl() {
 }
 
 func runDebugger() {
-	input := "1 + 2 + 3;"
+	input := "1 * (2 + 3);"
 	p := parser.NewParser(lexer.NewLexer(input))
 	p.ParseProgram()
 }
