@@ -74,6 +74,15 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseBoolean() ast.Expression {
+	trace(fmt.Sprintf("parseBoolean(): {%s}", p.debug()))
+
+	boolean := ast.NewBoolean(p.currentToken, p.currentTokenIs(token.TRUE))
+
+	untrace(fmt.Sprintf("parseBoolean() => return Boolean{%q}", boolean))
+	return boolean
+}
+
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	trace(fmt.Sprintf("parseInfixExpression(left=%q): {%s}", left, p.debug()))
 
@@ -90,6 +99,151 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	trace(fmt.Sprintf("parseGroupedExpression(): {%s}", p.debug()))
+
+	p.nextToken()
+	expression := p.parseExpression(LOWEST)
+
+	traceDetail(fmt.Sprintf("if p.expectPeek(token.RPAREN) then ok: {%s}", p.debug()))
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	untrace(fmt.Sprintf("parseGroupedExpression() => return Expression{%q}", expression))
+	return expression
+}
+
+func (p *Parser) parseIfExpression() ast.Expression {
+	trace(fmt.Sprintf("parseIfExpression(): {%s}", p.debug()))
+
+	expression := ast.NewIfExpression(p.currentToken)
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+	condition := p.parseExpression(LOWEST)
+	expression.SetCondition(condition)
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	consequence := p.parseBlockStatement()
+	expression.SetConsequence(consequence)
+
+	if p.peekTokenIs(token.ELSE) {
+		p.nextToken()
+
+		if !p.expectPeek(token.LBRACE) {
+			return nil
+		}
+
+		alternative := p.parseBlockStatement()
+		expression.SetAlternative(alternative)
+	}
+
+	untrace(fmt.Sprintf("parseIfExpression() => return Expression{%q}", expression))
+	return expression
+}
+
+func (p *Parser) parseFunctionExpression() ast.Expression {
+	trace(fmt.Sprintf("parseFunctionExpression(): {%s}", p.debug()))
+
+	expression := ast.NewFunctionLiteral(p.currentToken)
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	parameters := p.parseFunctionParameters()
+	expression.SetParameters(parameters)
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	body := p.parseBlockStatement()
+	expression.SetBody(body)
+
+	untrace(fmt.Sprintf("parseFunctionExpression() => return Expression{%q}", expression))
+	return expression
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	trace(fmt.Sprintf("parseFunctionParameters(): {%s}", p.debug()))
+
+	identifiers := []*ast.Identifier{}
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return identifiers
+	}
+
+	p.nextToken()
+
+	identifier := ast.NewIdentifier(p.currentToken)
+	identifiers = append(identifiers, identifier)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		identifier := ast.NewIdentifier(p.currentToken)
+		identifiers = append(identifiers, identifier)
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	untrace(fmt.Sprintf("parseFunctionParameters() => return []*Identifier{%q}", identifiers))
+	return identifiers
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	trace(fmt.Sprintf("parseCallExpression(): {%s}", p.debug()))
+
+	expression := ast.NewCallExpression(p.currentToken, function)
+
+	args := p.parseCallArguments()
+	expression.SetArguments(args)
+
+	untrace(fmt.Sprintf("parseCallExpression() => return Expression{%q}", expression))
+	return expression
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	trace(fmt.Sprintf("parseCallArguments(): {%s}", p.debug()))
+
+	args := []ast.Expression{}
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+
+	arg := p.parseExpression(LOWEST)
+	args = append(args, arg)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		arg := p.parseExpression(LOWEST)
+		args = append(args, arg)
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	untrace(fmt.Sprintf("parseCallArguments() => return []Expression{%q}", args))
+	return args
+}
+
 func (p *Parser) initExpressionFunctions() {
 	p.prefixParseFns = map[token.TokenType]prefixParseFn{}
 	p.infixParseFns = map[token.TokenType]infixParseFn{}
@@ -99,6 +253,13 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 
+	p.registerPrefix(token.TRUE, p.parseBoolean)
+	p.registerPrefix(token.FALSE, p.parseBoolean)
+
+	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, p.parseFunctionExpression)
+
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
@@ -107,6 +268,8 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 }
 
 func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {

@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	runDebugger()
+	runRepl()
 }
 
 func runRepl() {
@@ -24,7 +24,13 @@ func runRepl() {
 }
 
 func runDebugger() {
-	input := "1 + 2 + 3;"
+	parser.Debug = true
+	input := "add(1, 2 * 3, 4 + 5);"
 	p := parser.NewParser(lexer.NewLexer(input))
 	p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		fmt.Printf("\ninput = %s\n\n", input)
+		fmt.Printf("%+v\n", p.Errors())
+	}
 }

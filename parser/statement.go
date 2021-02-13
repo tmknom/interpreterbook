@@ -32,8 +32,12 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	// TODO セミコロンに遭遇するまで読み飛ばす
-	for !p.currentTokenIs(token.SEMICOLON) {
+	p.nextToken()
+
+	expression := p.parseExpression(LOWEST)
+	stmt.SetValue(expression)
+
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
@@ -44,13 +48,13 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	if !p.currentTokenIs(token.RETURN) {
 		return nil
 	}
-
 	p.nextToken()
 
 	stmt := ast.NewReturnStatement()
+	expression := p.parseExpression(LOWEST)
+	stmt.SetReturnValue(expression)
 
-	// TODO セミコロンに遭遇するまで読み飛ばす
-	for !p.currentTokenIs(token.SEMICOLON) {
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
@@ -68,4 +72,19 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	}
 
 	return stmt
+}
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	blockStatement := ast.NewBlockStatement(p.currentToken)
+	p.nextToken()
+
+	for !p.currentTokenIs(token.RBRACE) && !p.currentTokenIs(token.EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			blockStatement.AddStatement(stmt)
+		}
+		p.nextToken()
+	}
+
+	return blockStatement
 }

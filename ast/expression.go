@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"monkey/token"
 	"strconv"
+	"strings"
 )
 
 type Expression interface {
@@ -65,6 +66,34 @@ func (i *IntegerLiteral) TokenLiteral() string {
 
 func (i *IntegerLiteral) String() string {
 	return i.Token.Literal
+}
+
+type Boolean struct {
+	Token *token.Token
+	Value bool
+}
+
+var _ Expression = (*Boolean)(nil)
+
+func NewBoolean(token *token.Token, value bool) *Boolean {
+	return &Boolean{
+		Token: token,
+		Value: value,
+	}
+}
+
+func NewBooleanByValue(value string) *Boolean {
+	return NewBoolean(token.NewIdentifierToken(value), value == "true")
+}
+
+func (b *Boolean) expressionNode() {}
+
+func (b *Boolean) TokenLiteral() string {
+	return b.Token.Literal
+}
+
+func (b *Boolean) String() string {
+	return b.Token.Literal
 }
 
 type PrefixExpression struct {
@@ -135,6 +164,145 @@ func (e *InfixExpression) String() string {
 	out.WriteString(e.Left.String())
 	out.WriteString(" " + e.Operator + " ")
 	out.WriteString(e.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+type IfExpression struct {
+	Token       *token.Token // 'if' トークン
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
+
+var _ Expression = (*IfExpression)(nil)
+
+func NewIfExpression(token *token.Token) *IfExpression {
+	return &IfExpression{
+		Token: token,
+	}
+}
+
+func (e *IfExpression) SetCondition(exp Expression) {
+	e.Condition = exp
+}
+
+func (e *IfExpression) SetConsequence(bs *BlockStatement) {
+	e.Consequence = bs
+}
+
+func (e *IfExpression) SetAlternative(bs *BlockStatement) {
+	e.Alternative = bs
+}
+
+func (e *IfExpression) expressionNode() {}
+
+func (e *IfExpression) TokenLiteral() string {
+	return e.Token.Literal
+}
+
+func (e *IfExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("if")
+	out.WriteString(e.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(e.Consequence.String())
+
+	if e.Alternative != nil {
+		out.WriteString("else")
+		out.WriteString(e.Alternative.String())
+	}
+
+	return out.String()
+}
+
+type FunctionLiteral struct {
+	Token      *token.Token // 'fn' トークン
+	Parameters []*Identifier
+	Body       *BlockStatement
+}
+
+var _ Expression = (*FunctionLiteral)(nil)
+
+func NewFunctionLiteral(token *token.Token) *FunctionLiteral {
+	return &FunctionLiteral{
+		Token:      token,
+		Parameters: []*Identifier{},
+	}
+}
+
+func (l *FunctionLiteral) SetParameters(parameters []*Identifier) {
+	l.Parameters = parameters
+}
+
+func (l *FunctionLiteral) SetBody(body *BlockStatement) {
+	l.Body = body
+}
+
+func (l *FunctionLiteral) expressionNode() {}
+
+func (l *FunctionLiteral) TokenLiteral() string {
+	return l.Token.Literal
+}
+
+func (l *FunctionLiteral) String() string {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, parameter := range l.Parameters {
+		params = append(params, parameter.String())
+	}
+
+	out.WriteString(l.TokenLiteral())
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ","))
+	out.WriteString(")")
+	out.WriteString(l.Body.String())
+
+	return out.String()
+}
+
+type CallExpression struct {
+	Token     *token.Token // '(' トークン
+	Function  Expression   // Identifier または FunctionLiteral
+	Arguments []Expression
+}
+
+var _ Expression = (*CallExpression)(nil)
+
+func NewCallExpression(token *token.Token, function Expression) *CallExpression {
+	return &CallExpression{
+		Token:    token,
+		Function: function,
+	}
+}
+
+func (e *CallExpression) SetFunction(exp Expression) {
+	e.Function = exp
+}
+
+func (e *CallExpression) SetArguments(arguments []Expression) {
+	e.Arguments = arguments
+}
+
+func (e *CallExpression) expressionNode() {}
+
+func (e *CallExpression) TokenLiteral() string {
+	return e.Token.Literal
+}
+
+func (e *CallExpression) String() string {
+	var out bytes.Buffer
+
+	args := []string{}
+	for _, arg := range e.Arguments {
+		args = append(args, arg.String())
+	}
+
+	out.WriteString(e.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
 	out.WriteString(")")
 
 	return out.String()

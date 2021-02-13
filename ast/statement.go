@@ -25,11 +25,11 @@ func NewLetStatement(name *Identifier) *LetStatement {
 	}
 }
 
-func NewLetStatementByName(name string) *LetStatement {
-	return NewLetStatement(NewIdentifierByName(name))
-}
-
 var letToken = token.NewToken(token.LET, "let")
+
+func (s *LetStatement) SetValue(value Expression) {
+	s.Value = value
+}
 
 func (s *LetStatement) statementNode() {}
 
@@ -62,11 +62,14 @@ var _ Statement = (*ReturnStatement)(nil)
 func NewReturnStatement() *ReturnStatement {
 	return &ReturnStatement{
 		Token: returnToken,
-		//ReturnValue: returnValue,
 	}
 }
 
 var returnToken = token.NewToken(token.RETURN, "return")
+
+func (s *ReturnStatement) SetReturnValue(value Expression) {
+	s.ReturnValue = value
+}
 
 func (s *ReturnStatement) statementNode() {}
 
@@ -116,4 +119,36 @@ func (s *ExpressionStatement) String() string {
 	}
 
 	return ""
+}
+
+type BlockStatement struct {
+	*token.Token // 式の最初のトークン
+	Statements   []Statement
+}
+
+var _ Statement = (*BlockStatement)(nil)
+
+func NewBlockStatement(token *token.Token) *BlockStatement {
+	return &BlockStatement{
+		Token:      token,
+		Statements: []Statement{},
+	}
+}
+
+func (s *BlockStatement) AddStatement(statement Statement) {
+	s.Statements = append(s.Statements, statement)
+}
+
+func (s *BlockStatement) statementNode() {}
+
+func (s *BlockStatement) TokenLiteral() string {
+	return s.Token.Literal
+}
+
+func (s *BlockStatement) String() string {
+	var out bytes.Buffer
+	for _, statement := range s.Statements {
+		out.WriteString(statement.String())
+	}
+	return out.String()
 }

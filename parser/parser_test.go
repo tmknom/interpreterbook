@@ -7,93 +7,134 @@ import (
 	"monkey/lexer"
 	"monkey/parser"
 	"monkey/token"
+	"strconv"
 	"testing"
 )
 
 func TestLetStatements(t *testing.T) {
-	input := `
-let x = 5;
-let y = 10;
-let foobar = 838383;
-`
 	cases := []struct {
-		want []*ast.LetStatement
+		input string
+		want  *ast.LetStatement
 	}{
 		{
-			want: []*ast.LetStatement{
-				ast.NewLetStatementByName("x"),
-				ast.NewLetStatementByName("y"),
-				ast.NewLetStatementByName("foobar"),
+			input: "let x = 5;",
+			want: &ast.LetStatement{
+				Token: token.NewIdentifierToken("let"),
+				Name:  ast.NewIdentifierByName("x"),
+				Value: ast.NewIntegerLiteralByValue(5),
+			},
+		},
+		{
+			input: "let y = true;",
+			want: &ast.LetStatement{
+				Token: token.NewIdentifierToken("let"),
+				Name:  ast.NewIdentifierByName("y"),
+				Value: ast.NewBooleanByValue("true"),
+			},
+		},
+		{
+			input: "let foobar = y;",
+			want: &ast.LetStatement{
+				Token: token.NewIdentifierToken("let"),
+				Name:  ast.NewIdentifierByName("foobar"),
+				Value: ast.NewIdentifierByName("y"),
+			},
+		},
+		{
+			input: "let foobar = x + y;",
+			want: &ast.LetStatement{
+				Token: token.NewIdentifierToken("let"),
+				Name:  ast.NewIdentifierByName("foobar"),
+				Value: newInfixExpression(
+					ast.NewIdentifierByName("x"),
+					plusToken,
+					ast.NewIdentifierByName("y"),
+				),
 			},
 		},
 	}
 
-	p := parser.NewParser(lexer.NewLexer(input))
-	program := p.ParseProgram()
-	checkParserError(t, p)
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
 
-	if program == nil {
-		t.Fatalf("ParseProgram() returned nil")
-	}
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
 
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-			len(program.Statements))
-	}
-
-	for i, tc := range cases {
-		stmt := program.Statements[i]
-		got, ok := stmt.(*ast.LetStatement)
+		stmt, ok := program.Statements[0].(*ast.LetStatement)
 		if !ok {
-			t.Errorf("stmt not *ast.LetStatement: %+v", stmt)
+			t.Errorf("program.Statements[0] not *ast.LetStatement: %+v", stmt)
 			continue
 		}
 
-		opt := cmpopts.IgnoreUnexported(*got.Token)
-		if diff := cmp.Diff(got, tc.want[i], opt); diff != "" {
-			t.Errorf("failed statement: diff (-got +want):\n%s", diff)
+		opt := cmpopts.IgnoreUnexported(*stmt.Token)
+		if diff := cmp.Diff(stmt, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
 		}
 	}
 }
 
 func TestRetStatements(t *testing.T) {
-	input := `
-return 5;
-return 10;
-return 993322;
-`
 	cases := []struct {
-		want []*ast.ReturnStatement
+		input string
+		want  *ast.ReturnStatement
 	}{
 		{
-			want: []*ast.ReturnStatement{
-				ast.NewReturnStatement(),
-				ast.NewReturnStatement(),
-				ast.NewReturnStatement(),
+			input: "return 5;",
+			want: &ast.ReturnStatement{
+				Token:       token.NewIdentifierToken("return"),
+				ReturnValue: ast.NewIntegerLiteralByValue(5),
+			},
+		},
+		{
+			input: "return true;",
+			want: &ast.ReturnStatement{
+				Token:       token.NewIdentifierToken("return"),
+				ReturnValue: ast.NewBooleanByValue("true"),
+			},
+		},
+		{
+			input: "return foobar;",
+			want: &ast.ReturnStatement{
+				Token:       token.NewIdentifierToken("return"),
+				ReturnValue: ast.NewIdentifierByName("foobar"),
+			},
+		},
+		{
+			input: "return x + y;",
+			want: &ast.ReturnStatement{
+				Token: token.NewIdentifierToken("return"),
+				ReturnValue: newInfixExpression(
+					ast.NewIdentifierByName("x"),
+					plusToken,
+					ast.NewIdentifierByName("y"),
+				),
 			},
 		},
 	}
 
-	p := parser.NewParser(lexer.NewLexer(input))
-	program := p.ParseProgram()
-	checkParserError(t, p)
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
 
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-			len(program.Statements))
-	}
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
 
-	for i, tc := range cases {
-		stmt := program.Statements[i]
-		got, ok := stmt.(*ast.ReturnStatement)
+		stmt, ok := program.Statements[0].(*ast.ReturnStatement)
 		if !ok {
-			t.Errorf("stmt not *ast.ReturnStatement: %+v", stmt)
+			t.Errorf("program.Statements[0] not *ast.ReturnStatement: %+v", stmt)
 			continue
 		}
 
-		opt := cmpopts.IgnoreUnexported(*got.Token)
-		if diff := cmp.Diff(got, tc.want[i], opt); diff != "" {
-			t.Errorf("failed statement: diff (-got +want):\n%s", diff)
+		opt := cmpopts.IgnoreUnexported(*stmt.Token)
+		if diff := cmp.Diff(stmt, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
 		}
 	}
 }
@@ -107,10 +148,7 @@ foobar;
 	}{
 		{
 			want: []*ast.ExpressionStatement{
-				&ast.ExpressionStatement{
-					Token:      token.NewIdentifierToken("foobar"),
-					Expression: ast.NewIdentifierByName("foobar"),
-				},
+				newIdentifierExpressionStatement("foobar"),
 			},
 		},
 	}
@@ -148,10 +186,7 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	}{
 		{
 			want: []*ast.ExpressionStatement{
-				&ast.ExpressionStatement{
-					Token:      token.NewIntegerToken("5"),
-					Expression: ast.NewIntegerLiteralByValue(5),
-				},
+				newIntegerLiteralExpressionStatement(5),
 			},
 		},
 	}
@@ -192,6 +227,14 @@ func TestParsingPrefixExpressions(t *testing.T) {
 		{
 			input: "-15;",
 			want:  newPrefixExpression(minusToken, ast.NewIntegerLiteralByValue(15)),
+		},
+		{
+			input: "!true;",
+			want:  newPrefixExpression(bangToken, ast.NewBooleanByValue("true")),
+		},
+		{
+			input: "!false;",
+			want:  newPrefixExpression(bangToken, ast.NewBooleanByValue("false")),
 		},
 	}
 
@@ -293,6 +336,30 @@ func TestParsingInfixExpressions(t *testing.T) {
 				ast.NewIntegerLiteralByValue(5),
 			),
 		},
+		{
+			input: "true == true;",
+			want: newInfixExpression(
+				ast.NewBooleanByValue("true"),
+				eqToken,
+				ast.NewBooleanByValue("true"),
+			),
+		},
+		{
+			input: "true != false;",
+			want: newInfixExpression(
+				ast.NewBooleanByValue("true"),
+				notEqToken,
+				ast.NewBooleanByValue("false"),
+			),
+		},
+		{
+			input: "false == false;",
+			want: newInfixExpression(
+				ast.NewBooleanByValue("false"),
+				eqToken,
+				ast.NewBooleanByValue("false"),
+			),
+		},
 	}
 
 	for _, tc := range cases {
@@ -324,6 +391,266 @@ func TestParsingInfixExpressions(t *testing.T) {
 	}
 }
 
+func TestIfExpression(t *testing.T) {
+	cases := []struct {
+		input string
+		want  *ast.IfExpression
+	}{
+		{
+			input: "if (x < y) { x }",
+			want: &ast.IfExpression{
+				Token: token.NewIdentifierToken("if"),
+				Condition: newInfixExpression(
+					ast.NewIdentifierByName("x"),
+					ltToken,
+					ast.NewIdentifierByName("y"),
+				),
+				Consequence: &ast.BlockStatement{
+					Token: token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{
+						newIdentifierExpressionStatement("x"),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("program.Statements[0] not *ast.ExpressionStatement: %+v", stmt)
+			continue
+		}
+
+		exp, ok := stmt.Expression.(*ast.IfExpression)
+		if !ok {
+			t.Errorf("stmt.Expression not *ast.IfExpression: %+v", exp)
+			continue
+		}
+
+		opt := cmpopts.IgnoreUnexported(*exp.Token)
+		if diff := cmp.Diff(exp, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
+		}
+	}
+}
+
+func TestIfElseExpression(t *testing.T) {
+	cases := []struct {
+		input string
+		want  *ast.IfExpression
+	}{
+		{
+			input: "if (x < y) { x } else { y }",
+			want: &ast.IfExpression{
+				Token: token.NewIdentifierToken("if"),
+				Condition: newInfixExpression(
+					ast.NewIdentifierByName("x"),
+					ltToken,
+					ast.NewIdentifierByName("y"),
+				),
+				Consequence: &ast.BlockStatement{
+					Token: token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{
+						newIdentifierExpressionStatement("x"),
+					},
+				},
+				Alternative: &ast.BlockStatement{
+					Token: token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{
+						newIdentifierExpressionStatement("y"),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("program.Statements[0] not *ast.ExpressionStatement: %+v", stmt)
+			continue
+		}
+
+		exp, ok := stmt.Expression.(*ast.IfExpression)
+		if !ok {
+			t.Errorf("stmt.Expression not *ast.IfExpression: %+v", exp)
+			continue
+		}
+
+		opt := cmpopts.IgnoreUnexported(*exp.Token)
+		if diff := cmp.Diff(exp, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
+		}
+	}
+}
+
+func TestFunctionLiteral(t *testing.T) {
+	cases := []struct {
+		input string
+		want  *ast.FunctionLiteral
+	}{
+		{
+			input: "fn(x, y) { x + y; }",
+			want: &ast.FunctionLiteral{
+				Token: token.NewIdentifierToken("fn"),
+				Parameters: []*ast.Identifier{
+					ast.NewIdentifierByName("x"),
+					ast.NewIdentifierByName("y"),
+				},
+				Body: &ast.BlockStatement{
+					Token: token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{
+						&ast.ExpressionStatement{
+							Token: token.NewIdentifierToken("x"),
+							Expression: newInfixExpression(
+								ast.NewIdentifierByName("x"),
+								plusToken,
+								ast.NewIdentifierByName("y"),
+							),
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "fn() {}",
+			want: &ast.FunctionLiteral{
+				Token:      token.NewIdentifierToken("fn"),
+				Parameters: []*ast.Identifier{},
+				Body: &ast.BlockStatement{
+					Token:      token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{},
+				},
+			},
+		},
+		{
+			input: "fn(x) {}",
+			want: &ast.FunctionLiteral{
+				Token: token.NewIdentifierToken("fn"),
+				Parameters: []*ast.Identifier{
+					ast.NewIdentifierByName("x"),
+				},
+				Body: &ast.BlockStatement{
+					Token:      token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{},
+				},
+			},
+		},
+		{
+			input: "fn(x, y) {}",
+			want: &ast.FunctionLiteral{
+				Token: token.NewIdentifierToken("fn"),
+				Parameters: []*ast.Identifier{
+					ast.NewIdentifierByName("x"),
+					ast.NewIdentifierByName("y"),
+				},
+				Body: &ast.BlockStatement{
+					Token:      token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("program.Statements[0] not *ast.ExpressionStatement: %+v", stmt)
+			continue
+		}
+
+		exp, ok := stmt.Expression.(*ast.FunctionLiteral)
+		if !ok {
+			t.Errorf("stmt.Expression not *ast.FunctionLiteral: %+v", exp)
+			continue
+		}
+
+		opt := cmpopts.IgnoreUnexported(*exp.Token)
+		if diff := cmp.Diff(exp, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
+		}
+	}
+}
+
+func TestCallExpression(t *testing.T) {
+	cases := []struct {
+		input string
+		want  *ast.CallExpression
+	}{
+		{
+			input: "add(1, 2 * 3);",
+			want: &ast.CallExpression{
+				Token: token.NewToken(token.LPAREN, "("),
+				Arguments: []ast.Expression{
+					ast.NewIntegerLiteralByValue(1),
+					newInfixExpression(
+						ast.NewIntegerLiteralByValue(2),
+						asteriskToken,
+						ast.NewIntegerLiteralByValue(3),
+					),
+				},
+				Function: ast.NewIdentifierByName("add"),
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("program.Statements[0] not *ast.ExpressionStatement: %+v", stmt)
+			continue
+		}
+
+		exp, ok := stmt.Expression.(*ast.CallExpression)
+		if !ok {
+			t.Errorf("stmt.Expression not *ast.CallExpression: %+v", exp)
+			continue
+		}
+
+		opt := cmpopts.IgnoreUnexported(*exp.Token)
+		if diff := cmp.Diff(exp, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
+		}
+	}
+}
+
 func TestOperatorPrecedenceParsing(t *testing.T) {
 	cases := []struct {
 		input string
@@ -344,6 +671,58 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{
 			"3 + 4 * 5 == 3 * 1 + 4 * 5",
 			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		},
+		{
+			"true",
+			"true",
+		},
+		{
+			"false",
+			"false",
+		},
+		{
+			"3 > 5 == false",
+			"((3 > 5) == false)",
+		},
+		{
+			"3 < 5 == true",
+			"((3 < 5) == true)",
+		},
+		{
+			"1 + (2 + 3) + 4",
+			"((1 + (2 + 3)) + 4)",
+		},
+		{
+			"(5 + 5) * 2",
+			"((5 + 5) * 2)",
+		},
+		{
+			"2 / (5 + 5)",
+			"(2 / (5 + 5))",
+		},
+		{
+			"(5 + 5) * 2 * (5 + 5)",
+			"(((5 + 5) * 2) * (5 + 5))",
+		},
+		{
+			"-(5 + 5)",
+			"(-(5 + 5))",
+		},
+		{
+			"!(true == true)",
+			"(!(true == true))",
+		},
+		{
+			"a + add(b * c) + d",
+			"((a + add((b * c))) + d)",
+		},
+		{
+			"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+			"add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+		},
+		{
+			"add(a + b + c * d / f + g)",
+			"add((((a + b) + ((c * d) / f)) + g))",
 		},
 	}
 
@@ -373,6 +752,20 @@ func newPrefixExpression(t *token.Token, exp ast.Expression) *ast.PrefixExpressi
 		Token:    t,
 		Operator: t.Literal,
 		Right:    exp,
+	}
+}
+
+func newIdentifierExpressionStatement(identifier string) *ast.ExpressionStatement {
+	return &ast.ExpressionStatement{
+		Token:      token.NewIdentifierToken(identifier),
+		Expression: ast.NewIdentifierByName(identifier),
+	}
+}
+
+func newIntegerLiteralExpressionStatement(value int64) *ast.ExpressionStatement {
+	return &ast.ExpressionStatement{
+		Token:      token.NewIntegerToken(strconv.FormatInt(value, 10)),
+		Expression: ast.NewIntegerLiteralByValue(value),
 	}
 }
 
