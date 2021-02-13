@@ -40,6 +40,18 @@ func TestLetStatements(t *testing.T) {
 				Value: ast.NewIdentifierByName("y"),
 			},
 		},
+		{
+			input: "let foobar = x + y;",
+			want: &ast.LetStatement{
+				Token: token.NewIdentifierToken("let"),
+				Name:  ast.NewIdentifierByName("foobar"),
+				Value: newInfixExpression(
+					ast.NewIdentifierByName("x"),
+					plusToken,
+					ast.NewIdentifierByName("y"),
+				),
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -66,43 +78,63 @@ func TestLetStatements(t *testing.T) {
 }
 
 func TestRetStatements(t *testing.T) {
-	input := `
-return 5;
-return 10;
-return 993322;
-`
 	cases := []struct {
-		want []*ast.ReturnStatement
+		input string
+		want  *ast.ReturnStatement
 	}{
 		{
-			want: []*ast.ReturnStatement{
-				ast.NewReturnStatement(),
-				ast.NewReturnStatement(),
-				ast.NewReturnStatement(),
+			input: "return 5;",
+			want: &ast.ReturnStatement{
+				Token:       token.NewIdentifierToken("return"),
+				ReturnValue: ast.NewIntegerLiteralByValue(5),
+			},
+		},
+		{
+			input: "return true;",
+			want: &ast.ReturnStatement{
+				Token:       token.NewIdentifierToken("return"),
+				ReturnValue: ast.NewBooleanByValue("true"),
+			},
+		},
+		{
+			input: "return foobar;",
+			want: &ast.ReturnStatement{
+				Token:       token.NewIdentifierToken("return"),
+				ReturnValue: ast.NewIdentifierByName("foobar"),
+			},
+		},
+		{
+			input: "return x + y;",
+			want: &ast.ReturnStatement{
+				Token: token.NewIdentifierToken("return"),
+				ReturnValue: newInfixExpression(
+					ast.NewIdentifierByName("x"),
+					plusToken,
+					ast.NewIdentifierByName("y"),
+				),
 			},
 		},
 	}
 
-	p := parser.NewParser(lexer.NewLexer(input))
-	program := p.ParseProgram()
-	checkParserError(t, p)
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
 
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-			len(program.Statements))
-	}
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
 
-	for i, tc := range cases {
-		stmt := program.Statements[i]
-		got, ok := stmt.(*ast.ReturnStatement)
+		stmt, ok := program.Statements[0].(*ast.ReturnStatement)
 		if !ok {
-			t.Errorf("stmt not *ast.ReturnStatement: %+v", stmt)
+			t.Errorf("program.Statements[0] not *ast.ReturnStatement: %+v", stmt)
 			continue
 		}
 
-		opt := cmpopts.IgnoreUnexported(*got.Token)
-		if diff := cmp.Diff(got, tc.want[i], opt); diff != "" {
-			t.Errorf("failed statement: diff (-got +want):\n%s", diff)
+		opt := cmpopts.IgnoreUnexported(*stmt.Token)
+		if diff := cmp.Diff(stmt, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
 		}
 	}
 }

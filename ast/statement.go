@@ -62,11 +62,14 @@ var _ Statement = (*ReturnStatement)(nil)
 func NewReturnStatement() *ReturnStatement {
 	return &ReturnStatement{
 		Token: returnToken,
-		//ReturnValue: returnValue,
 	}
 }
 
 var returnToken = token.NewToken(token.RETURN, "return")
+
+func (s *ReturnStatement) SetReturnValue(value Expression) {
+	s.ReturnValue = value
+}
 
 func (s *ReturnStatement) statementNode() {}
 
