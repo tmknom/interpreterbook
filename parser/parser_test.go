@@ -465,6 +465,103 @@ func TestIfElseExpression(t *testing.T) {
 	}
 }
 
+func TestFunctionLiteral(t *testing.T) {
+	cases := []struct {
+		input string
+		want  *ast.FunctionLiteral
+	}{
+		{
+			input: "fn(x, y) { x + y; }",
+			want: &ast.FunctionLiteral{
+				Token: token.NewIdentifierToken("fn"),
+				Parameters: []*ast.Identifier{
+					ast.NewIdentifierByName("x"),
+					ast.NewIdentifierByName("y"),
+				},
+				Body: &ast.BlockStatement{
+					Token: token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{
+						&ast.ExpressionStatement{
+							Token: token.NewIdentifierToken("x"),
+							Expression: newInfixExpression(
+								ast.NewIdentifierByName("x"),
+								plusToken,
+								ast.NewIdentifierByName("y"),
+							),
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "fn() {}",
+			want: &ast.FunctionLiteral{
+				Token:      token.NewIdentifierToken("fn"),
+				Parameters: []*ast.Identifier{},
+				Body: &ast.BlockStatement{
+					Token:      token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{},
+				},
+			},
+		},
+		{
+			input: "fn(x) {}",
+			want: &ast.FunctionLiteral{
+				Token: token.NewIdentifierToken("fn"),
+				Parameters: []*ast.Identifier{
+					ast.NewIdentifierByName("x"),
+				},
+				Body: &ast.BlockStatement{
+					Token:      token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{},
+				},
+			},
+		},
+		{
+			input: "fn(x, y) {}",
+			want: &ast.FunctionLiteral{
+				Token: token.NewIdentifierToken("fn"),
+				Parameters: []*ast.Identifier{
+					ast.NewIdentifierByName("x"),
+					ast.NewIdentifierByName("y"),
+				},
+				Body: &ast.BlockStatement{
+					Token:      token.NewToken(token.LBRACE, "{"),
+					Statements: []ast.Statement{},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("program.Statements[0] not *ast.ExpressionStatement: %+v", stmt)
+			continue
+		}
+
+		exp, ok := stmt.Expression.(*ast.FunctionLiteral)
+		if !ok {
+			t.Errorf("stmt.Expression not *ast.FunctionLiteral: %+v", exp)
+			continue
+		}
+
+		opt := cmpopts.IgnoreUnexported(*exp.Token)
+		if diff := cmp.Diff(exp, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
+		}
+	}
+}
+
 func TestOperatorPrecedenceParsing(t *testing.T) {
 	cases := []struct {
 		input string

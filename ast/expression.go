@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"monkey/token"
 	"strconv"
+	"strings"
 )
 
 type Expression interface {
@@ -212,6 +213,52 @@ func (e *IfExpression) String() string {
 		out.WriteString("else")
 		out.WriteString(e.Alternative.String())
 	}
+
+	return out.String()
+}
+
+type FunctionLiteral struct {
+	Token      *token.Token // 'fn' トークン
+	Parameters []*Identifier
+	Body       *BlockStatement
+}
+
+var _ Expression = (*FunctionLiteral)(nil)
+
+func NewFunctionLiteral(token *token.Token) *FunctionLiteral {
+	return &FunctionLiteral{
+		Token:      token,
+		Parameters: []*Identifier{},
+	}
+}
+
+func (l *FunctionLiteral) SetParameters(parameters []*Identifier) {
+	l.Parameters = parameters
+}
+
+func (l *FunctionLiteral) SetBody(body *BlockStatement) {
+	l.Body = body
+}
+
+func (l *FunctionLiteral) expressionNode() {}
+
+func (l *FunctionLiteral) TokenLiteral() string {
+	return l.Token.Literal
+}
+
+func (l *FunctionLiteral) String() string {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, parameter := range l.Parameters {
+		params = append(params, parameter.String())
+	}
+
+	out.WriteString(l.TokenLiteral())
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ","))
+	out.WriteString(")")
+	out.WriteString(l.Body.String())
 
 	return out.String()
 }

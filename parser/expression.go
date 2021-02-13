@@ -152,6 +152,57 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseFunctionExpression() ast.Expression {
+	trace(fmt.Sprintf("parseFunctionExpression(): {%s}", p.debug()))
+
+	expression := ast.NewFunctionLiteral(p.currentToken)
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	parameters := p.parseFunctionParameters()
+	expression.SetParameters(parameters)
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	body := p.parseBlockStatement()
+	expression.SetBody(body)
+
+	untrace(fmt.Sprintf("parseFunctionExpression() => return Expression{%q}", expression))
+	return expression
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	trace(fmt.Sprintf("parseFunctionParameters(): {%s}", p.debug()))
+
+	identifiers := []*ast.Identifier{}
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return identifiers
+	}
+
+	p.nextToken()
+
+	identifier := ast.NewIdentifier(p.currentToken)
+	identifiers = append(identifiers, identifier)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		identifier := ast.NewIdentifier(p.currentToken)
+		identifiers = append(identifiers, identifier)
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	untrace(fmt.Sprintf("parseFunctionParameters() => return []*Identifier{%q}", identifiers))
+	return identifiers
+}
+
 func (p *Parser) initExpressionFunctions() {
 	p.prefixParseFns = map[token.TokenType]prefixParseFn{}
 	p.infixParseFns = map[token.TokenType]infixParseFn{}
@@ -166,6 +217,7 @@ func (p *Parser) initExpressionFunctions() {
 
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, p.parseFunctionExpression)
 
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
