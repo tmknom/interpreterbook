@@ -117,3 +117,35 @@ func (s *ExpressionStatement) String() string {
 
 	return ""
 }
+
+type BlockStatement struct {
+	*token.Token // 式の最初のトークン
+	Statements   []Statement
+}
+
+var _ Statement = (*BlockStatement)(nil)
+
+func NewBlockStatement(token *token.Token) *BlockStatement {
+	return &BlockStatement{
+		Token:      token,
+		Statements: []Statement{},
+	}
+}
+
+func (s *BlockStatement) AddStatement(statement Statement) {
+	s.Statements = append(s.Statements, statement)
+}
+
+func (s *BlockStatement) statementNode() {}
+
+func (s *BlockStatement) TokenLiteral() string {
+	return s.Token.Literal
+}
+
+func (s *BlockStatement) String() string {
+	var out bytes.Buffer
+	for _, statement := range s.Statements {
+		out.WriteString(statement.String())
+	}
+	return out.String()
+}

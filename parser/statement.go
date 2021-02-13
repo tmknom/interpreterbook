@@ -69,3 +69,18 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 
 	return stmt
 }
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	blockStatement := ast.NewBlockStatement(p.currentToken)
+	p.nextToken()
+
+	for !p.currentTokenIs(token.RBRACE) && !p.currentTokenIs(token.EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			blockStatement.AddStatement(stmt)
+		}
+		p.nextToken()
+	}
+
+	return blockStatement
+}

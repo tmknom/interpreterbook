@@ -114,6 +114,44 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseIfExpression() ast.Expression {
+	trace(fmt.Sprintf("parseIfExpression(): {%s}", p.debug()))
+
+	expression := ast.NewIfExpression(p.currentToken)
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+	condition := p.parseExpression(LOWEST)
+	expression.SetCondition(condition)
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	consequence := p.parseBlockStatement()
+	expression.SetConsequence(consequence)
+
+	if p.peekTokenIs(token.ELSE) {
+		p.nextToken()
+
+		if !p.expectPeek(token.LBRACE) {
+			return nil
+		}
+
+		alternative := p.parseBlockStatement()
+		expression.SetAlternative(alternative)
+	}
+
+	untrace(fmt.Sprintf("parseIfExpression() => return Expression{%q}", expression))
+	return expression
+}
+
 func (p *Parser) initExpressionFunctions() {
 	p.prefixParseFns = map[token.TokenType]prefixParseFn{}
 	p.infixParseFns = map[token.TokenType]infixParseFn{}
@@ -127,6 +165,7 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(token.IF, p.parseIfExpression)
 
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
