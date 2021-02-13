@@ -11,6 +11,10 @@ func Eval(node ast.Node) object.Object {
 		return evalStatements(node.Statements)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
+	case *ast.InfixExpression:
+		left := Eval(node.Left)
+		right := Eval(node.Right)
+		return evalInfixExpression(node.Operator, left, right)
 	case *ast.PrefixExpression:
 		right := Eval(node.Right)
 		return evalPrefixExpression(node.Operator, right)
@@ -29,6 +33,45 @@ func evalStatements(statements []ast.Statement) object.Object {
 		result = Eval(statement)
 	}
 	return result
+}
+
+func evalInfixExpression(operator string, left object.Object, right object.Object) object.Object {
+	switch {
+	case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
+		return evalIntegerInfixExpression(operator, left, right)
+	case operator == "==":
+		return object.NewBoolean(left == right)
+	case operator == "!=":
+		return object.NewBoolean(left != right)
+	default:
+		return object.NULL
+	}
+}
+
+func evalIntegerInfixExpression(operator string, left object.Object, right object.Object) object.Object {
+	leftVal := left.(*object.Integer).Value
+	rightVal := right.(*object.Integer).Value
+
+	switch operator {
+	case "+":
+		return object.NewInteger(leftVal + rightVal)
+	case "-":
+		return object.NewInteger(leftVal - rightVal)
+	case "*":
+		return object.NewInteger(leftVal * rightVal)
+	case "/":
+		return object.NewInteger(leftVal / rightVal)
+	case "<":
+		return object.NewBoolean(leftVal < rightVal)
+	case ">":
+		return object.NewBoolean(leftVal > rightVal)
+	case "==":
+		return object.NewBoolean(leftVal == rightVal)
+	case "!=":
+		return object.NewBoolean(leftVal != rightVal)
+	default:
+		return object.NULL
+	}
 }
 
 func evalPrefixExpression(operator string, right object.Object) object.Object {
