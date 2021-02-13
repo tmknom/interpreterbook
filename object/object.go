@@ -37,8 +37,16 @@ type Boolean struct {
 	Value bool
 }
 
+var (
+	TRUE  = &Boolean{Value: true}
+	FALSE = &Boolean{Value: false}
+)
+
 func NewBoolean(value bool) *Boolean {
-	return &Boolean{Value: value}
+	if value {
+		return TRUE
+	}
+	return FALSE
 }
 
 var _ Object = (*Boolean)(nil)
@@ -52,6 +60,8 @@ func (b Boolean) Inspect() string {
 }
 
 type Null struct{}
+
+var NULL = &Null{}
 
 var _ Object = (*Null)(nil)
 
