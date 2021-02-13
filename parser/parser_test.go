@@ -193,6 +193,14 @@ func TestParsingPrefixExpressions(t *testing.T) {
 			input: "-15;",
 			want:  newPrefixExpression(minusToken, ast.NewIntegerLiteralByValue(15)),
 		},
+		{
+			input: "!true;",
+			want:  newPrefixExpression(bangToken, ast.NewBooleanByValue("true")),
+		},
+		{
+			input: "!false;",
+			want:  newPrefixExpression(bangToken, ast.NewBooleanByValue("false")),
+		},
 	}
 
 	for _, tc := range cases {
@@ -293,6 +301,30 @@ func TestParsingInfixExpressions(t *testing.T) {
 				ast.NewIntegerLiteralByValue(5),
 			),
 		},
+		{
+			input: "true == true;",
+			want: newInfixExpression(
+				ast.NewBooleanByValue("true"),
+				eqToken,
+				ast.NewBooleanByValue("true"),
+			),
+		},
+		{
+			input: "true != false;",
+			want: newInfixExpression(
+				ast.NewBooleanByValue("true"),
+				notEqToken,
+				ast.NewBooleanByValue("false"),
+			),
+		},
+		{
+			input: "false == false;",
+			want: newInfixExpression(
+				ast.NewBooleanByValue("false"),
+				eqToken,
+				ast.NewBooleanByValue("false"),
+			),
+		},
 	}
 
 	for _, tc := range cases {
@@ -344,6 +376,22 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{
 			"3 + 4 * 5 == 3 * 1 + 4 * 5",
 			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		},
+		{
+			"true",
+			"true",
+		},
+		{
+			"false",
+			"false",
+		},
+		{
+			"3 > 5 == false",
+			"((3 > 5) == false)",
+		},
+		{
+			"3 < 5 == true",
+			"((3 < 5) == true)",
 		},
 	}
 

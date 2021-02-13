@@ -74,6 +74,15 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseBoolean() ast.Expression {
+	trace(fmt.Sprintf("parseBoolean(): {%s}", p.debug()))
+
+	boolean := ast.NewBoolean(p.currentToken, p.currentTokenIs(token.TRUE))
+
+	untrace(fmt.Sprintf("parseBoolean() => return Boolean{%q}", boolean))
+	return boolean
+}
+
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	trace(fmt.Sprintf("parseInfixExpression(left=%q): {%s}", left, p.debug()))
 
@@ -98,6 +107,9 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+
+	p.registerPrefix(token.TRUE, p.parseBoolean)
+	p.registerPrefix(token.FALSE, p.parseBoolean)
 
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)

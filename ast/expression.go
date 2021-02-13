@@ -67,6 +67,34 @@ func (i *IntegerLiteral) String() string {
 	return i.Token.Literal
 }
 
+type Boolean struct {
+	Token *token.Token
+	Value bool
+}
+
+var _ Expression = (*Boolean)(nil)
+
+func NewBoolean(token *token.Token, value bool) *Boolean {
+	return &Boolean{
+		Token: token,
+		Value: value,
+	}
+}
+
+func NewBooleanByValue(value string) *Boolean {
+	return NewBoolean(token.NewIdentifierToken(value), value == "true")
+}
+
+func (b *Boolean) expressionNode() {}
+
+func (b *Boolean) TokenLiteral() string {
+	return b.Token.Literal
+}
+
+func (b *Boolean) String() string {
+	return b.Token.Literal
+}
+
 type PrefixExpression struct {
 	Token    *token.Token // 前置トークン／たとえば「!」
 	Operator string
