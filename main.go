@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"monkey/evaluator"
 	"monkey/lexer"
 	"monkey/parser"
 	"monkey/repl"
@@ -10,7 +11,7 @@ import (
 )
 
 func main() {
-	runRepl()
+	runDebugger()
 }
 
 func runRepl() {
@@ -24,13 +25,27 @@ func runRepl() {
 }
 
 func runDebugger() {
-	parser.Debug = true
-	input := "add(1, 2 * 3, 4 + 5);"
+	input := `
+if (10 > 1) {
+  if (10 > 1) {
+    return 10;
+  }
+
+  return 1;
+}
+`
+
+	parser.Debug = false
 	p := parser.NewParser(lexer.NewLexer(input))
-	p.ParseProgram()
+	program := p.ParseProgram()
 
 	if len(p.Errors()) > 0 {
 		fmt.Printf("\ninput = %s\n\n", input)
 		fmt.Printf("%+v\n", p.Errors())
+	}
+
+	evaluated := evaluator.Eval(program)
+	if evaluated != nil {
+		fmt.Printf("%s\n", evaluated.Inspect())
 	}
 }
