@@ -203,6 +203,47 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	return identifiers
 }
 
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	trace(fmt.Sprintf("parseCallExpression(): {%s}", p.debug()))
+
+	expression := ast.NewCallExpression(p.currentToken, function)
+
+	args := p.parseCallArguments()
+	expression.SetArguments(args)
+
+	untrace(fmt.Sprintf("parseCallExpression() => return Expression{%q}", expression))
+	return expression
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	trace(fmt.Sprintf("parseCallArguments(): {%s}", p.debug()))
+
+	args := []ast.Expression{}
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+
+	arg := p.parseExpression(LOWEST)
+	args = append(args, arg)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		arg := p.parseExpression(LOWEST)
+		args = append(args, arg)
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	untrace(fmt.Sprintf("parseCallArguments() => return []Expression{%q}", args))
+	return args
+}
+
 func (p *Parser) initExpressionFunctions() {
 	p.prefixParseFns = map[token.TokenType]prefixParseFn{}
 	p.infixParseFns = map[token.TokenType]infixParseFn{}
@@ -227,6 +268,8 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 }
 
 func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {

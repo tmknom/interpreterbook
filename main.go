@@ -25,7 +25,7 @@ func runRepl() {
 
 func runDebugger() {
 	parser.Debug = true
-	input := "fn(x, y) { x + y; }"
+	input := "add(1, 2 * 3, 4 + 5);"
 	p := parser.NewParser(lexer.NewLexer(input))
 	p.ParseProgram()
 

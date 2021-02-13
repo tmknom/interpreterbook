@@ -262,3 +262,48 @@ func (l *FunctionLiteral) String() string {
 
 	return out.String()
 }
+
+type CallExpression struct {
+	Token     *token.Token // '(' トークン
+	Function  Expression   // Identifier または FunctionLiteral
+	Arguments []Expression
+}
+
+var _ Expression = (*CallExpression)(nil)
+
+func NewCallExpression(token *token.Token, function Expression) *CallExpression {
+	return &CallExpression{
+		Token:    token,
+		Function: function,
+	}
+}
+
+func (e *CallExpression) SetFunction(exp Expression) {
+	e.Function = exp
+}
+
+func (e *CallExpression) SetArguments(arguments []Expression) {
+	e.Arguments = arguments
+}
+
+func (e *CallExpression) expressionNode() {}
+
+func (e *CallExpression) TokenLiteral() string {
+	return e.Token.Literal
+}
+
+func (e *CallExpression) String() string {
+	var out bytes.Buffer
+
+	args := []string{}
+	for _, arg := range e.Arguments {
+		args = append(args, arg.String())
+	}
+
+	out.WriteString(e.Function.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(args, ", "))
+	out.WriteString(")")
+
+	return out.String()
+}

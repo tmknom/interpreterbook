@@ -562,6 +562,57 @@ func TestFunctionLiteral(t *testing.T) {
 	}
 }
 
+func TestCallExpression(t *testing.T) {
+	cases := []struct {
+		input string
+		want  *ast.CallExpression
+	}{
+		{
+			input: "add(1, 2 * 3);",
+			want: &ast.CallExpression{
+				Token: token.NewToken(token.LPAREN, "("),
+				Arguments: []ast.Expression{
+					ast.NewIntegerLiteralByValue(1),
+					newInfixExpression(
+						ast.NewIntegerLiteralByValue(2),
+						asteriskToken,
+						ast.NewIntegerLiteralByValue(3),
+					),
+				},
+				Function: ast.NewIdentifierByName("add"),
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		p := parser.NewParser(lexer.NewLexer(tc.input))
+		program := p.ParseProgram()
+		checkParserError(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("program.Statements[0] not *ast.ExpressionStatement: %+v", stmt)
+			continue
+		}
+
+		exp, ok := stmt.Expression.(*ast.CallExpression)
+		if !ok {
+			t.Errorf("stmt.Expression not *ast.CallExpression: %+v", exp)
+			continue
+		}
+
+		opt := cmpopts.IgnoreUnexported(*exp.Token)
+		if diff := cmp.Diff(exp, tc.want, opt); diff != "" {
+			t.Errorf("failed statement %q, diff (-got +want):\n%s", tc.input, diff)
+		}
+	}
+}
+
 func TestOperatorPrecedenceParsing(t *testing.T) {
 	cases := []struct {
 		input string
@@ -622,6 +673,18 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{
 			"!(true == true)",
 			"(!(true == true))",
+		},
+		{
+			"a + add(b * c) + d",
+			"((a + add((b * c))) + d)",
+		},
+		{
+			"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+			"add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+		},
+		{
+			"add(a + b + c * d / f + g)",
+			"add((((a + b) + ((c * d) / f)) + g))",
 		},
 	}
 
