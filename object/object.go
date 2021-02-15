@@ -16,6 +16,7 @@ const (
 	BOOLEAN_OBJ      = "BOOLEAN"
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
+	ARRAY_OBJ        = "ARRAY"
 	FUNCTION_OBJ     = "FUNCTION"
 	BUILTIN_OBJ      = "BUILTIN"
 	ERROR_OBJ        = "ERROR"
@@ -118,6 +119,37 @@ func (r ReturnValue) Type() ObjectType {
 
 func (r ReturnValue) Inspect() string {
 	return r.Value.Inspect()
+}
+
+type Array struct {
+	Elements []Object
+}
+
+func NewArray(elements []Object) *Array {
+	return &Array{
+		Elements: elements,
+	}
+}
+
+var _ Object = (*Array)(nil)
+
+func (a Array) Type() ObjectType {
+	return ARRAY_OBJ
+}
+
+func (a Array) Inspect() string {
+	var out bytes.Buffer
+
+	elements := []string{}
+	for _, element := range a.Elements {
+		elements = append(elements, element.Inspect())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
 }
 
 type Function struct {
