@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	runRepl()
+	runDebugger()
 }
 
 func runRepl() {
@@ -27,13 +27,37 @@ func runRepl() {
 
 func runDebugger() {
 	input := `
-if (10 > 1) {
-  if (10 > 1) {
-    return 10;
+let map = fn(arr, f) {
+  let iter = fn(arr, accumulated) {
+    if (len(arr) == 0){
+      accumulated
+    } else {
+      iter(rest(arr), push(accumulated, f(first(arr))));
+    }
   }
-
-  return 1;
+  iter(arr, []);
 }
+
+let reduce = fn(arr, initial, f) {
+  let iter = fn(arr, result) {
+    if (len(arr) == 0){
+      result
+    } else {
+      iter(rest(arr), f(result, first(arr)));
+    }
+  }
+  iter(arr, initial);
+}
+
+let a = [1,2,3,4];
+let double = fn(x) { x * 2 };
+map(a, double);
+
+let sum = fn(arr) {
+  reduce(arr, 0, fn(initial, el){initial + el});
+}
+
+sum([1, 2, 3, 4, 5]);
 `
 
 	parser.Debug = false
