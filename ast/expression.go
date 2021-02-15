@@ -40,6 +40,34 @@ func (i *Identifier) String() string {
 	return i.Value
 }
 
+type StringLiteral struct {
+	Token *token.Token // token.INT トークン
+	Value string
+}
+
+var _ Expression = (*StringLiteral)(nil)
+
+func NewStringLiteral(token *token.Token, value string) *StringLiteral {
+	return &StringLiteral{
+		Token: token,
+		Value: value,
+	}
+}
+
+func NewStringLiteralByValue(value string) *StringLiteral {
+	return NewStringLiteral(token.NewStringToken(value), value)
+}
+
+func (s *StringLiteral) expressionNode() {}
+
+func (s *StringLiteral) TokenLiteral() string {
+	return s.Token.Literal
+}
+
+func (s *StringLiteral) String() string {
+	return s.Token.Literal
+}
+
 type IntegerLiteral struct {
 	Token *token.Token // token.INT トークン
 	Value int64

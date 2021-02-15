@@ -43,6 +43,10 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	return ast.NewIdentifier(p.currentToken)
 }
 
+func (p *Parser) parseStringLiteral() ast.Expression {
+	return ast.NewStringLiteral(p.currentToken, p.currentToken.Literal)
+}
+
 func (p *Parser) parseIntegerLiteral() ast.Expression {
 	trace(fmt.Sprintf("parseIntegerLiteral(): {%s}", p.debug()))
 
@@ -259,6 +263,7 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionExpression)
+	p.registerPrefix(token.STRING, p.parseStringLiteral)
 
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)

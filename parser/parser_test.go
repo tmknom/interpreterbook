@@ -738,6 +738,24 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 	}
 }
 
+func TestStringLiteralExpression(t *testing.T) {
+	input := `"hello world";`
+
+	p := parser.NewParser(lexer.NewLexer(input))
+	program := p.ParseProgram()
+	checkParserError(t, p)
+
+	stmt := program.Statements[0].(*ast.ExpressionStatement)
+	literal, ok := stmt.Expression.(*ast.StringLiteral)
+	if !ok {
+		t.Fatalf("exp not *ast.StringLiteral. got=%T", stmt.Expression)
+	}
+
+	if literal.Value != "hello world" {
+		t.Errorf("literal.Value not %q. got=%q", "hello world", literal.Value)
+	}
+}
+
 func newInfixExpression(left ast.Expression, t *token.Token, right ast.Expression) *ast.InfixExpression {
 	return &ast.InfixExpression{
 		Token:    t,
