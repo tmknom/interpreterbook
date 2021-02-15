@@ -28,6 +28,8 @@ func (l *Lexer) NextToken() *token.Token {
 	var tok *token.Token
 
 	switch l.ch {
+	case '"':
+		tok = token.NewStringToken(l.readString())
 	case '=':
 		if l.peekChar() == '=' {
 			first := l.ch // 1文字目を保存
@@ -88,6 +90,18 @@ func (l *Lexer) NextToken() *token.Token {
 
 	l.readChar()
 	return tok
+}
+
+// 文字列を読み進める
+func (l *Lexer) readString() string {
+	beginPosition := l.position + 1
+	for {
+		l.readChar()
+		if l.ch == '"' || l.ch == 0 {
+			break
+		}
+	}
+	return l.input[beginPosition:l.position]
 }
 
 // 識別子を読み進める

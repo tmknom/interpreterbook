@@ -31,6 +31,10 @@ func NewIntegerToken(literal string) *Token {
 	return tok
 }
 
+func NewStringToken(literal string) *Token {
+	return NewToken(STRING, literal)
+}
+
 func NewEOF() *Token {
 	return &Token{Type: EOF, Literal: ""}
 }
@@ -57,6 +61,7 @@ func (t *Token) Debug() string {
 const (
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
+	STRING  = "STRING"
 
 	// 識別子 + リテラル
 	IDENT = "IDENT" // add, foobar, x, y, ...
