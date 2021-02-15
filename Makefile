@@ -20,9 +20,6 @@ run: fmt ## Run
 clean-test: cache test vet ## Clean and Test
 
 test: fmt ## Test
-	go test ./evaluator
-
-test-all: fmt ## Test all
 	go test $$(go list ./... | grep -v zz_example)
 
 vet: ## Vet

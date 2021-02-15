@@ -8,19 +8,41 @@ import (
 )
 
 type ObjectType string
+type BuiltinFunction func(args ...Object) Object
 
 const (
+	STRING_OBJ       = "STRING"
 	INTEGER_OBJ      = "INTEGER"
 	BOOLEAN_OBJ      = "BOOLEAN"
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
+	ARRAY_OBJ        = "ARRAY"
 	FUNCTION_OBJ     = "FUNCTION"
+	BUILTIN_OBJ      = "BUILTIN"
 	ERROR_OBJ        = "ERROR"
 )
 
 type Object interface {
 	Type() ObjectType
 	Inspect() string
+}
+
+type String struct {
+	Value string
+}
+
+func NewString(value string) *String {
+	return &String{Value: value}
+}
+
+var _ Object = (*String)(nil)
+
+func (s String) Type() ObjectType {
+	return STRING_OBJ
+}
+
+func (s String) Inspect() string {
+	return s.Value
 }
 
 type Integer struct {
@@ -99,6 +121,37 @@ func (r ReturnValue) Inspect() string {
 	return r.Value.Inspect()
 }
 
+type Array struct {
+	Elements []Object
+}
+
+func NewArray(elements []Object) *Array {
+	return &Array{
+		Elements: elements,
+	}
+}
+
+var _ Object = (*Array)(nil)
+
+func (a Array) Type() ObjectType {
+	return ARRAY_OBJ
+}
+
+func (a Array) Inspect() string {
+	var out bytes.Buffer
+
+	elements := []string{}
+	for _, element := range a.Elements {
+		elements = append(elements, element.Inspect())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
+}
+
 type Function struct {
 	Parameters []*ast.Identifier
 	Body       *ast.BlockStatement
@@ -134,6 +187,24 @@ func (f Function) Inspect() string {
 	out.WriteString("\n}")
 
 	return out.String()
+}
+
+type Builtin struct {
+	Fn BuiltinFunction
+}
+
+func NewBuiltin(fn BuiltinFunction) *Builtin {
+	return &Builtin{Fn: fn}
+}
+
+var _ Object = (*Builtin)(nil)
+
+func (b Builtin) Type() ObjectType {
+	return BUILTIN_OBJ
+}
+
+func (b Builtin) Inspect() string {
+	return "builtin function"
 }
 
 type Error struct {
