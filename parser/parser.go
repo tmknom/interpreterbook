@@ -21,6 +21,7 @@ const (
 	PRODUCT     // *
 	PREFIX      // -X or !X
 	CALL        // myFunction(X)
+	INDEX       // array[INDEX]
 )
 
 var precedences = map[token.TokenType]precedence{
@@ -33,6 +34,7 @@ var precedences = map[token.TokenType]precedence{
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 }
 
 type Parser struct {

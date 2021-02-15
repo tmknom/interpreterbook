@@ -40,6 +40,78 @@ func (i *Identifier) String() string {
 	return i.Value
 }
 
+type ArrayLiteral struct {
+	Token    *token.Token // '[' トークン
+	Elements []Expression
+}
+
+var _ Expression = (*ArrayLiteral)(nil)
+
+func NewArrayLiteral(token *token.Token) *ArrayLiteral {
+	return &ArrayLiteral{
+		Token: token,
+	}
+}
+
+func (a *ArrayLiteral) SetElements(elements []Expression) {
+	a.Elements = elements
+}
+
+func (a *ArrayLiteral) expressionNode() {}
+
+func (a *ArrayLiteral) TokenLiteral() string {
+	return a.Token.Literal
+}
+
+func (a *ArrayLiteral) String() string {
+	var out bytes.Buffer
+	elements := []string{}
+	for _, element := range a.Elements {
+		elements = append(elements, element.String())
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+	return out.String()
+}
+
+type IndexExpression struct {
+	Token *token.Token // '[' トークン
+	Left  Expression
+	Index Expression
+}
+
+var _ Expression = (*IndexExpression)(nil)
+
+func NewIndexExpression(token *token.Token, left Expression) *IndexExpression {
+	return &IndexExpression{
+		Token: token,
+		Left:  left,
+	}
+}
+
+func (e *IndexExpression) SetIndex(index Expression) {
+	e.Index = index
+}
+
+func (e *IndexExpression) expressionNode() {}
+
+func (e *IndexExpression) TokenLiteral() string {
+	return e.Token.Literal
+}
+
+func (e *IndexExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString(e.Left.String())
+	out.WriteString("[")
+	out.WriteString(e.Index.String())
+	out.WriteString("])")
+
+	return out.String()
+}
+
 type StringLiteral struct {
 	Token *token.Token // token.INT トークン
 	Value string

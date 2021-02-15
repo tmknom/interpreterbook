@@ -63,6 +63,18 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	trace(fmt.Sprintf("parseArrayLiteral(): {%s}", p.debug()))
+
+	expression := ast.NewArrayLiteral(p.currentToken)
+
+	elements := p.parseExpressionList(token.RBRACKET)
+	expression.SetElements(elements)
+
+	untrace(fmt.Sprintf("parseArrayLiteral() => return ArrayLiteral{%q}", expression))
+	return expression
+}
+
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	trace(fmt.Sprintf("parsePrefixExpression(): {%s}", p.debug()))
 
@@ -212,40 +224,57 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 
 	expression := ast.NewCallExpression(p.currentToken, function)
 
-	args := p.parseCallArguments()
+	args := p.parseExpressionList(token.RPAREN)
 	expression.SetArguments(args)
 
 	untrace(fmt.Sprintf("parseCallExpression() => return Expression{%q}", expression))
 	return expression
 }
 
-func (p *Parser) parseCallArguments() []ast.Expression {
-	trace(fmt.Sprintf("parseCallArguments(): {%s}", p.debug()))
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+	trace(fmt.Sprintf("parseExpressionList(): {%s}", p.debug()))
 
-	args := []ast.Expression{}
-	if p.peekTokenIs(token.RPAREN) {
+	list := []ast.Expression{}
+	if p.peekTokenIs(end) {
 		p.nextToken()
-		return args
+		return list
 	}
 
 	p.nextToken()
 
-	arg := p.parseExpression(LOWEST)
-	args = append(args, arg)
+	element := p.parseExpression(LOWEST)
+	list = append(list, element)
 
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
 		p.nextToken()
-		arg := p.parseExpression(LOWEST)
-		args = append(args, arg)
+		element := p.parseExpression(LOWEST)
+		list = append(list, element)
 	}
 
-	if !p.expectPeek(token.RPAREN) {
+	if !p.expectPeek(end) {
 		return nil
 	}
 
-	untrace(fmt.Sprintf("parseCallArguments() => return []Expression{%q}", args))
-	return args
+	untrace(fmt.Sprintf("parseExpressionList() => return []Expression{%q}", list))
+	return list
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	trace(fmt.Sprintf("parseIndexExpression(): {%s}", p.debug()))
+
+	expression := ast.NewIndexExpression(p.currentToken, left)
+
+	p.nextToken()
+	index := p.parseExpression(LOWEST)
+	expression.SetIndex(index)
+
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+
+	untrace(fmt.Sprintf("parseIndexExpression() => return IndexExpression{%q}", expression))
+	return expression
 }
 
 func (p *Parser) initExpressionFunctions() {
@@ -264,6 +293,7 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionExpression)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
+	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
@@ -275,6 +305,7 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerInfix(token.GT, p.parseInfixExpression)
 
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 }
 
 func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
