@@ -10,6 +10,7 @@ import (
 type ObjectType string
 
 const (
+	STRING_OBJ       = "STRING"
 	INTEGER_OBJ      = "INTEGER"
 	BOOLEAN_OBJ      = "BOOLEAN"
 	NULL_OBJ         = "NULL"
@@ -21,6 +22,24 @@ const (
 type Object interface {
 	Type() ObjectType
 	Inspect() string
+}
+
+type String struct {
+	Value string
+}
+
+func NewString(value string) *String {
+	return &String{Value: value}
+}
+
+var _ Object = (*String)(nil)
+
+func (s String) Type() ObjectType {
+	return STRING_OBJ
+}
+
+func (s String) Inspect() string {
+	return s.Value
 }
 
 type Integer struct {
