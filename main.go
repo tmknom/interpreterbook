@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"monkey/evaluator"
 	"monkey/lexer"
+	"monkey/object"
 	"monkey/parser"
 	"monkey/repl"
 	"os"
@@ -11,7 +12,7 @@ import (
 )
 
 func main() {
-	runDebugger()
+	runRepl()
 }
 
 func runRepl() {
@@ -38,13 +39,14 @@ if (10 > 1) {
 	parser.Debug = false
 	p := parser.NewParser(lexer.NewLexer(input))
 	program := p.ParseProgram()
+	env := object.NewEnvironment()
 
 	if len(p.Errors()) > 0 {
 		fmt.Printf("\ninput = %s\n\n", input)
 		fmt.Printf("%+v\n", p.Errors())
 	}
 
-	evaluated := evaluator.Eval(program)
+	evaluated := evaluator.Eval(program, env)
 	if evaluated != nil {
 		fmt.Printf("%s\n", evaluated.Inspect())
 	}
