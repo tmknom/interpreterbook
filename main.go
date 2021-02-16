@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	runDebugger()
+	runRepl()
 }
 
 func runRepl() {
@@ -58,6 +58,15 @@ let sum = fn(arr) {
 }
 
 sum([1, 2, 3, 4, 5]);
+
+let people = [{"name":"Alice", "age": 24}, {"name":"Anna", "age": 28}];
+people[0]["name"];
+people[1]["age"];
+people[0]["age"] + people[1]["age"];
+
+let getName = fn(person) { person["name"]; }
+getName(people[0])
+getName(people[1])
 `
 
 	parser.Debug = false
