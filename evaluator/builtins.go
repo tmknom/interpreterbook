@@ -87,4 +87,10 @@ var builtins = map[string]*object.Builtin{
 
 		return object.NewArray(newElements)
 	}),
+	"puts": object.NewBuiltin(func(args ...object.Object) object.Object {
+		for _, arg := range args {
+			fmt.Println(arg.Inspect())
+		}
+		return object.NULL
+	}),
 }

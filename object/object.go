@@ -3,6 +3,7 @@ package object
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
 	"monkey/ast"
 	"strings"
 )
@@ -17,6 +18,7 @@ const (
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	ARRAY_OBJ        = "ARRAY"
+	HASH_OBJ         = "HASH"
 	FUNCTION_OBJ     = "FUNCTION"
 	BUILTIN_OBJ      = "BUILTIN"
 	ERROR_OBJ        = "ERROR"
@@ -223,4 +225,73 @@ func (e Error) Type() ObjectType {
 
 func (e Error) Inspect() string {
 	return "ERROR: " + e.Message
+}
+
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
+func NewHash(pairs map[HashKey]HashPair) *Hash {
+	return &Hash{
+		Pairs: pairs,
+	}
+}
+
+var _ Object = (*Hash)(nil)
+
+func (h Hash) Type() ObjectType {
+	return HASH_OBJ
+}
+
+func (h Hash) Inspect() string {
+	var out bytes.Buffer
+
+	pairs := []string{}
+	for _, pair := range h.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s", pair.Key.Inspect(), pair.Value.Inspect()))
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
+	return out.String()
+}
+
+type HashKey struct {
+	Type  ObjectType
+	Value uint64
+}
+
+func newHashKey(objectType ObjectType, value uint64) HashKey {
+	return HashKey{Type: objectType, Value: value}
+}
+
+func (b *Boolean) HashKey() HashKey {
+	var value uint64
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+	return newHashKey(b.Type(), value)
+}
+
+func (i *Integer) HashKey() HashKey {
+	return newHashKey(i.Type(), uint64(i.Value))
+}
+
+func (s *String) HashKey() HashKey {
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+	return newHashKey(s.Type(), h.Sum64())
+}
+
+type Hashable interface {
+	HashKey() HashKey
 }

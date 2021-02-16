@@ -40,6 +40,43 @@ func (i *Identifier) String() string {
 	return i.Value
 }
 
+type HashLiteral struct {
+	Token *token.Token // '[' トークン
+	Pairs map[Expression]Expression
+}
+
+var _ Expression = (*HashLiteral)(nil)
+
+func NewHashLiteral(token *token.Token) *HashLiteral {
+	return &HashLiteral{
+		Token: token,
+		Pairs: map[Expression]Expression{},
+	}
+}
+
+func (l *HashLiteral) AddPair(key Expression, value Expression) {
+	l.Pairs[key] = value
+}
+
+func (l *HashLiteral) expressionNode() {}
+
+func (l *HashLiteral) TokenLiteral() string {
+	return l.Token.Literal
+}
+
+func (l *HashLiteral) String() string {
+	var out bytes.Buffer
+	pairs := []string{}
+	for key, value := range l.Pairs {
+		pairs = append(pairs, key.String()+":"+value.String())
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+	return out.String()
+}
+
 type ArrayLiteral struct {
 	Token    *token.Token // '[' トークン
 	Elements []Expression
