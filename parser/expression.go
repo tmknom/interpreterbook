@@ -75,6 +75,37 @@ func (p *Parser) parseArrayLiteral() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseHashLiteral() ast.Expression {
+	trace(fmt.Sprintf("parseHashLiteral(): {%s}", p.debug()))
+
+	hash := ast.NewHashLiteral(p.currentToken)
+
+	for !p.peekTokenIs(token.RBRACE) {
+		p.nextToken()
+		key := p.parseExpression(LOWEST)
+
+		if !p.expectPeek(token.COLON) {
+			return nil
+		}
+
+		p.nextToken()
+		value := p.parseExpression(LOWEST)
+
+		hash.AddPair(key, value)
+
+		if !p.peekTokenIs(token.RBRACE) && !p.expectPeek(token.COMMA) {
+			return nil
+		}
+	}
+
+	if !p.expectPeek(token.RBRACE) {
+		return nil
+	}
+
+	untrace(fmt.Sprintf("parseHashLiteral() => return HashLiteral{%q}", hash))
+	return hash
+}
+
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	trace(fmt.Sprintf("parsePrefixExpression(): {%s}", p.debug()))
 
@@ -294,6 +325,7 @@ func (p *Parser) initExpressionFunctions() {
 	p.registerPrefix(token.FUNCTION, p.parseFunctionExpression)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
+	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
 
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
